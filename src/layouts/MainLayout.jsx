@@ -21,19 +21,6 @@ export default function MainLayout() {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  if (authLoading) {
-    return (
-      <div className="site-shell">
-        <header className="topbar" />
-        <main className="loading-page">
-          <div className="auth-card">
-            <Spinner message="Restoring session..." />
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   const avatarFallback = useMemo(() => {
     const seed = encodeURIComponent(user?.email || user?.name || "student");
     const hashBase = (user?.email || "student")
