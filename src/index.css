@@ -1275,13 +1275,30 @@ textarea {
 }
 
 .admin-nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
   min-height: 42px;
-  justify-content: flex-start;
+  gap: 10px;
   text-align: left;
   font-size: 0.94rem;
   padding: 12px 14px;
   border-radius: 16px;
+}
+
+.admin-nav-count {
+  display: inline-flex;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  justify-content: center;
+  align-items: center;
 }
 
 .admin-sidebar .ghost-button {
@@ -2199,3 +2216,171 @@ textarea {
     height: 90px;
   }
 }
+
+/* Enhanced responsive layout for smaller screens */
+img,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+.topbar {
+  flex-wrap: wrap;
+}
+
+.brand {
+  min-width: 180px;
+}
+
+@media (max-width: 1024px) {
+  .topbar {
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .nav {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+
+  .nav-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .nav {
+    gap: 10px;
+  }
+
+  .home,
+  .about-grid,
+  .course-category-list,
+  .feature-grid,
+  .instructor-grid,
+  .contact-cta,
+  .dashboard-layout,
+  .admin-main-grid,
+  .admin-student-grid,
+  .admin-hero-grid,
+  .gallery-grid,
+  .card-grid,
+  .stat-grid,
+  .payment-page-grid,
+  .profile-grid,
+  .course-page-header {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profile-page .profile-image-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-page .profile-form {
+    padding: 24px;
+  }
+
+  .banner-img,
+  .about-img-box img,
+  .gallery-item img {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .site-shell {
+    padding: 14px;
+  }
+
+  .topbar {
+    padding: 16px;
+  }
+
+  .brand {
+    width: 100%;
+  }
+
+  .nav {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .nav-link {
+    padding: 8px 10px;
+  }
+
+  .nav-actions {
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .home {
+    padding: 24px 0;
+  }
+
+  .course-category-item,
+  .feature-card,
+  .instructor-card,
+  .payment-page-card,
+  .admin-section-card,
+  .admin-hero,
+  .admin-sidebar,
+  .exam-card,
+  .form-container,
+  .instructions-card,
+  .auth-card,
+  .profile-page .profile-form {
+    padding: 20px;
+  }
+
+  .course-category-item {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+
+  .contact-cta {
+    gap: 16px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .table-wrapper table {
+    min-width: auto;
+  }
+
+  .admin-sidebar {
+    position: static;
+    top: auto;
+  }
+
+  .notification-panel {
+    width: 100%;
+    left: 0;
+    right: auto;
+  }
+
+  .admin-modal-card {
+    width: min(100%, 90vw);
+  }
+
+  .preview-overlay,
+  .admin-modal-overlay {
+    padding: 16px;
+  }
+
+  .dashboard-hero h1,
+  .hero-copy h1,
+  .auth-card h1,
+  .gallery-title h1 {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+  }
+}
+
