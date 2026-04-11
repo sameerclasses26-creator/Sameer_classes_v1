@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardPage from "./pages/DashboardPage";
 import AdminPage from "./pages/AdminPage";
+import AdminStudentDetailPage from "./pages/AdminStudentDetailPage";
 import AdminExamPage from "./pages/AdminExamPage";
 import StudentExamPage from "./pages/StudentExamPage";
 import ContactPage from "./pages/ContactPage";
@@ -82,6 +83,14 @@ export default function App() {
           element={
             <ProtectedRoute admin>
               <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/students/:studentId"
+          element={
+            <ProtectedRoute admin>
+              <AdminStudentDetailPage />
             </ProtectedRoute>
           }
         />
