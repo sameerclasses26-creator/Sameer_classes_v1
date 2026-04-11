@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 
@@ -90,6 +90,7 @@ const initialMaterialForm = {
 };
 
 export default function AdminPage() {
+  const navigate = useNavigate();
   const { token, user } = useAuth();
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "A";
 
@@ -244,8 +245,8 @@ export default function AdminPage() {
 
   const handleSectionChange = async (sectionKey) => {
     if (sectionKey === "exams") {
-      // Navigate to exam management page
-      window.location.href = "/admin/exams";
+      // Navigate within React Router instead of hard refresh
+      navigate("/admin/exams");
       return;
     }
 
