@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { API_BASE } from "../api";
+import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 
 const initialForm = {
@@ -97,7 +98,9 @@ export default function CoursePaymentPage() {
   if (loading) {
     return (
       <div className="page section">
-        <article className="card payment-page-card">Loading course details...</article>
+        <div className="app-loading-block">
+          <Spinner message="Loading course details..." />
+        </div>
       </div>
     );
   }

@@ -6,6 +6,7 @@ import AdminPage from "./pages/AdminPage";
 import AdminExamPage from "./pages/AdminExamPage";
 import StudentExamPage from "./pages/StudentExamPage";
 import ContactPage from "./pages/ContactPage";
+import Spinner from "./components/Spinner";
 import CoursePaymentPage from "./pages/CoursePaymentPage";
 import CoursesPage from "./pages/CoursesPage";
 import GalleryPage from "./pages/GalleryPage";
@@ -26,7 +27,7 @@ function ProtectedRoute({ children, admin, studentOnly }) {
     return (
       <div className="page section auth-page">
         <div className="auth-card">
-          <p>Restoring session...</p>
+          <Spinner message="Restoring session..." />
         </div>
       </div>
     );

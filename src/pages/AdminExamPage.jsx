@@ -501,7 +501,9 @@ export default function AdminExamPage() {
                 </div>
               </form>
             ) : loading ? (
-              <p>Loading exams...</p>
+              <div className="app-loading-block">
+                <Spinner message="Loading exams..." />
+              </div>
             ) : exams.length === 0 ? (
               <p className="no-data">No exams created yet</p>
             ) : (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { API_BASE } from "../api";
+import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 
 const formatDate = (value) => {
@@ -87,7 +88,6 @@ export default function DashboardPage() {
   );
 
   const loadDashboard = async () => {
-    setLoading(true);
     try {
       const response = await fetch(`${API_BASE}/dashboard`, {
         headers: {
@@ -101,8 +101,6 @@ export default function DashboardPage() {
       setDashboard(json);
     } catch (error) {
       setDashboard(null);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -132,10 +130,15 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (token) {
-      loadDashboard();
-      loadExams();
-    }
+    if (!token) return;
+
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([loadDashboard(), loadExams()]);
+      setLoading(false);
+    };
+
+    loadAll();
   }, [token]);
 
   const handleBookingSubmit = async (event) => {
@@ -247,35 +250,39 @@ export default function DashboardPage() {
         </aside>
 
         <main className="dashboard-main">
-          <div className="section-heading">
-            <span className="pill">{navItems.find((item) => item.id === selectedSection)?.label}</span>
-            <h2>{{
-              currentCourse: "Current course",
-              studyMaterial: "Study material",
-              upcomingExams: "Upcoming exams",
-              recentExamResult: "Recent exam result",
-              testPerformance: "Test performance",
-              fees: "Fees",
-              recordedSession: "Upcoming recorded session",
-              bookSession: "Book session",
-            }[selectedSection]}</h2>
-            <p>
-              {selectedSection === "currentCourse" && "Track your enrolled courses and progress."}
-              {selectedSection === "studyMaterial" && "Access downloadable notes and resources for your classes."}
-              {selectedSection === "upcomingExams" && "Review exams scheduled for your enrolled subjects."}
-              {selectedSection === "recentExamResult" && "See the latest exam score and release status."}
-              {selectedSection === "testPerformance" && "Analyze your recent test performance over time."}
-              {selectedSection === "fees" && "Review fee status, pending payments and receipts."}
-              {selectedSection === "recordedSession" && "Open upcoming classes and recorded sessions."}
-              {selectedSection === "bookSession" && "Request a new doubt session with your mentor."}
-            </p>
-          </div>
+          {loading ? (
+            <div className="app-loading-block">
+              <Spinner message="Loading dashboard..." />
+            </div>
+          ) : (
+            <>
+              <div className="section-heading">
+                <span className="pill">{navItems.find((item) => item.id === selectedSection)?.label}</span>
+                <h2>{{
+                  currentCourse: "Current course",
+                  studyMaterial: "Study material",
+                  upcomingExams: "Upcoming exams",
+                  recentExamResult: "Recent exam result",
+                  testPerformance: "Test performance",
+                  fees: "Fees",
+                  recordedSession: "Upcoming recorded session",
+                  bookSession: "Book session",
+                }[selectedSection]}</h2>
+                <p>
+                  {selectedSection === "currentCourse" && "Track your enrolled courses and progress."}
+                  {selectedSection === "studyMaterial" && "Access downloadable notes and resources for your classes."}
+                  {selectedSection === "upcomingExams" && "Review exams scheduled for your enrolled subjects."}
+                  {selectedSection === "recentExamResult" && "See the latest exam score and release status."}
+                  {selectedSection === "testPerformance" && "Analyze your recent test performance over time."}
+                  {selectedSection === "fees" && "Review fee status, pending payments and receipts."}
+                  {selectedSection === "recordedSession" && "Open upcoming classes and recorded sessions."}
+                  {selectedSection === "bookSession" && "Request a new doubt session with your mentor."}
+                </p>
+              </div>
 
-          {selectedSection === "currentCourse" && (
-            <div className="card-grid">
-              {loading ? (
-                <article className="card">Loading courses...</article>
-              ) : dashboard?.enrollments?.length ? (
+              {selectedSection === "currentCourse" && (
+                <div className="card-grid">
+              {dashboard?.enrollments?.length ? (
                 dashboard.enrollments.map((enrollment) => (
                   <article className="card" key={enrollment._id}>
                     <div className="card-topline">
@@ -519,6 +526,8 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+          )}
+        </>
           )}
         </main>
       </div>

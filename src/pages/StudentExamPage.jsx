@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../api";
+import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 import "./StudentExamPage.css";
 
@@ -162,9 +163,8 @@ export default function StudentExamPage() {
   if (loading) {
     return (
       <div className="exam-page">
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Loading exam...</p>
+        <div className="app-loading-block">
+          <Spinner message="Loading exam..." />
         </div>
       </div>
     );

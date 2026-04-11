@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../api";
 import SectionHeading from "../components/SectionHeading";
 import CourseCard from "../components/CourseCard";
+import Spinner from "../components/Spinner";
 import shape1 from "../images/shape-1.png";
 import shape2 from "../images/shape-2.png";
 import shape3 from "../images/shape-3.png";
@@ -46,18 +47,24 @@ const features = [
 export default function HomePage() {
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadCourses = async () => {
-      const response = await fetch(`${API_BASE}/content/courses`);
-      if (response.ok) {
-        setCourses(await response.json());
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/content/courses`);
+        if (response.ok) {
+          setCourses(await response.json());
+        }
+      } catch (error) {
+        setCourses([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadCourses().catch(() => {
-      setCourses([]);
-    });
+    loadCourses();
   }, []);
 
   return (
@@ -154,11 +161,17 @@ export default function HomePage() {
           title="Popular coaching programs for every student"
           description="Browse the top courses that students are choosing to prepare for exams, boards, and career success."
         />
-        <div className="card-grid">
-          {courses.slice(0, 3).map((course) => (
-            <CourseCard key={course.slug} course={course} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="app-loading-block">
+            <Spinner message="Loading featured courses..." />
+          </div>
+        ) : (
+          <div className="card-grid">
+            {courses.slice(0, 3).map((course) => (
+              <CourseCard key={course.slug} course={course} />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="contact-cta">

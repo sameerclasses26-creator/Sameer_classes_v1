@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Spinner from "../components/Spinner";
 import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 
@@ -732,8 +733,16 @@ export default function AdminPage() {
         </aside>
 
         <section className="admin-content">
-          {loading ? <article className="card admin-section-card">Loading admin data...</article> : null}
-          {sectionLoading && !loading ? <article className="card admin-section-card">Loading section data...</article> : null}
+          {loading ? (
+            <div className="app-loading-block">
+              <Spinner message="Loading admin dashboard..." />
+            </div>
+          ) : null}
+          {sectionLoading && !loading ? (
+            <div className="app-loading-block">
+              <Spinner message="Loading section data..." />
+            </div>
+          ) : null}
 
           {!loading && activeSection === "students" ? (
             <>

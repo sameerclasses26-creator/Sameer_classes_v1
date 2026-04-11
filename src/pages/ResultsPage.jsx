@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_BASE } from "../api";
+import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 import "./ResultsPage.css";
 
@@ -175,9 +176,8 @@ export default function ResultsPage() {
 
             {/* Results Grid */}
             {loading ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <p>Loading results...</p>
+              <div className="app-loading-block">
+                <Spinner message="Loading results..." />
               </div>
             ) : filteredResults.length === 0 ? (
               <div className="no-results">
@@ -267,9 +267,8 @@ export default function ResultsPage() {
             </button>
 
             {loadingDetail ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <p>Loading result details...</p>
+              <div className="app-loading-block">
+                <Spinner message="Loading result details..." />
               </div>
             ) : detailedResult ? (
               <>

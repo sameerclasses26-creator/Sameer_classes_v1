@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE } from "../api";
 import CourseCard from "../components/CourseCard";
 import SectionHeading from "../components/SectionHeading";
+import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 
 export default function CoursesPage() {
@@ -16,6 +17,7 @@ export default function CoursesPage() {
   const [payments, setPayments] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (location.state?.paymentMessage) {
@@ -26,6 +28,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     const loadContent = async () => {
+      setLoading(true);
       try {
         const [coursesResponse, materialsResponse] = await Promise.all([
           fetch(`${API_BASE}/content/courses`),
@@ -51,6 +54,7 @@ export default function CoursesPage() {
           setEnrollments([]);
         }
       }
+      setLoading(false);
     };
 
     loadContent();
@@ -205,7 +209,11 @@ export default function CoursesPage() {
       </div>
       {message ? <p style={{ marginBottom: 16 }}>{message}</p> : null}
 
-      {activeTab === "courses" ? (
+      {loading ? (
+        <div className="app-loading-block">
+          <Spinner message="Loading courses and materials..." />
+        </div>
+      ) : activeTab === "courses" ? (
         Object.entries(groupedCourses).length ? (
           Object.entries(groupedCourses).map(([groupName, groupItems]) => (
             <div key={groupName} style={{ marginBottom: 28 }}>
