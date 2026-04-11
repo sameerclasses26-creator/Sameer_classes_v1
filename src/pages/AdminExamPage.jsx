@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./AdminExamPage.css";
+import Spinner from "../components/Spinner";
 
 const formatDate = (value) => {
   if (!value) return "-";

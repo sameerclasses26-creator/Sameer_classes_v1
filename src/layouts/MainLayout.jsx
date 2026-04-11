@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
+import Spinner from "../components/Spinner";
 import sameerLogo from "../Sameer.png";
 
 const navLinks = [
@@ -15,7 +16,8 @@ const navLinks = [
 ];
 
 export default function MainLayout() {
-  const { user, token, logout } = useAuth();
+  const { user, token, loading, logout } = useAuth();
+  const authLoading = Boolean(token) && loading;
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -127,7 +129,11 @@ export default function MainLayout() {
         </nav>
 
         <div className="nav-actions">
-          {user ? (
+          {authLoading ? (
+            <div className="nav-loading">
+              <Spinner size="small" message="Restoring session..." />
+            </div>
+          ) : user ? (
             <>
               <div className="notification-wrap">
                 <button className="ghost-button notification-button" type="button" onClick={toggleNotifications}>
