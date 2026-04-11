@@ -110,6 +110,11 @@ export default function AdminPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentSearch, setStudentSearch] = useState("");
   const [paymentReminder, setPaymentReminder] = useState({ amount: "", dueDate: "", notes: "" });
+
+  const navCounts = {
+    payments: summary?.pendingPayments ?? 0,
+    doubts: summary?.pendingDoubts ?? 0,
+  };
   const [courseForm, setCourseForm] = useState(initialCourseForm);
   const [materialForm, setMaterialForm] = useState(initialMaterialForm);
   const [doubtAction, setDoubtAction] = useState(initialDoubtAction);
@@ -694,6 +699,13 @@ export default function AdminPage() {
               </div>
               <span className="admin-hero-stat-icon">💰</span>
             </article>
+            <article className="admin-hero-stat stat-coral">
+              <div>
+                <span className="pill pill-soft">Payment requests</span>
+                <h3>{summary?.pendingPayments ?? 0}</h3>
+              </div>
+              <span className="admin-hero-stat-icon">💳</span>
+            </article>
             <article className="admin-hero-stat stat-teal">
               <div>
                 <span className="pill pill-soft">Open doubts</span>
@@ -727,6 +739,7 @@ export default function AdminPage() {
                 onClick={() => handleSectionChange(item.key)}
               >
                 {item.label}
+                {navCounts[item.key] > 0 ? <span className="admin-nav-count">{navCounts[item.key]}</span> : null}
               </button>
             ))}
           </div>
