@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 
 const initialForm = {
@@ -36,7 +37,7 @@ export default function CoursePaymentPage() {
     const loadCourse = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/content/courses/${courseId}`);
+        const response = await fetch(`${API_BASE}/content/courses/${courseId}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -66,7 +67,7 @@ export default function CoursePaymentPage() {
     setMessage("");
 
     try {
-      const response = await fetch(`/api/dashboard/purchase/course/${course._id}`, {
+      const response = await fetch(`${API_BASE}/dashboard/purchase/course/${course._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

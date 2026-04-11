@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./StudentExamPage.css";
 
@@ -66,7 +67,7 @@ export default function StudentExamPage() {
   const loadExam = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/exams/student/${examId}/start`, {
+      const response = await fetch(`${API_BASE}/exams/student/${examId}/start`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -126,7 +127,7 @@ export default function StudentExamPage() {
     }));
 
     try {
-      const response = await fetch(`/api/exams/${examId}/submit`, {
+      const response = await fetch(`${API_BASE}/exams/${examId}/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

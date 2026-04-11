@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
+import { API_BASE } from "../api";
 import SectionHeading from "../components/SectionHeading";
 import CourseCard from "../components/CourseCard";
 import shape1 from "../images/shape-1.png";
@@ -48,7 +49,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const loadCourses = async () => {
-      const response = await fetch("/api/content/courses");
+      const response = await fetch(`${API_BASE}/content/courses`);
       if (response.ok) {
         setCourses(await response.json());
       }

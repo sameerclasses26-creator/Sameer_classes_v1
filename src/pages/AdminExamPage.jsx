@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./AdminExamPage.css";
 
@@ -87,7 +88,7 @@ export default function AdminExamPage() {
   const [students, setStudents] = useState([]);
 
   const apiRequest = async (path, options = {}) => {
-    const response = await fetch(`/api${path}`, {
+    const response = await fetch(`${API_BASE}${path}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

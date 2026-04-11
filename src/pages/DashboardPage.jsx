@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 
 const formatDate = (value) => {
@@ -88,7 +89,7 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/dashboard", {
+      const response = await fetch(`${API_BASE}/dashboard`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -108,10 +109,10 @@ export default function DashboardPage() {
   const loadExams = async () => {
     try {
       const [upcomingRes, resultsRes] = await Promise.all([
-        fetch("/api/exams/student/upcoming", {
+        fetch(`${API_BASE}/exams/student/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("/api/exams/student/results", {
+        fetch(`${API_BASE}/exams/student/results`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -142,7 +143,7 @@ export default function DashboardPage() {
     setBookingMessage("");
 
     try {
-      const response = await fetch("/api/dashboard/doubts", {
+      const response = await fetch(`${API_BASE}/dashboard/doubts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -168,7 +169,7 @@ export default function DashboardPage() {
     if (!session.googleMeetLink) return;
 
     try {
-      const response = await fetch(`/api/dashboard/doubts/${session._id}/join`, {
+      const response = await fetch(`${API_BASE}/dashboard/doubts/${session._id}/join`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -189,7 +190,7 @@ export default function DashboardPage() {
 
   const handleCancelDoubt = async (session) => {
     try {
-      const response = await fetch(`/api/dashboard/doubts/${session._id}/cancel`, {
+      const response = await fetch(`${API_BASE}/dashboard/doubts/${session._id}/cancel`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

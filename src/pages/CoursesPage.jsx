@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { API_BASE } from "../api";
 import CourseCard from "../components/CourseCard";
 import SectionHeading from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
@@ -27,8 +28,8 @@ export default function CoursesPage() {
     const loadContent = async () => {
       try {
         const [coursesResponse, materialsResponse] = await Promise.all([
-          fetch("/api/content/courses"),
-          fetch("/api/content/materials"),
+          fetch(`${API_BASE}/content/courses`),
+          fetch(`${API_BASE}/content/materials`),
         ]);
         setCourses(await coursesResponse.json());
         setMaterials(await materialsResponse.json());
@@ -40,8 +41,8 @@ export default function CoursesPage() {
       if (token) {
         try {
           const [paymentsResponse, enrollmentsResponse] = await Promise.all([
-            fetch("/api/dashboard/payments", { headers: { Authorization: `Bearer ${token}` } }),
-            fetch("/api/dashboard/enrollments", { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API_BASE}/dashboard/payments`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API_BASE}/dashboard/enrollments`, { headers: { Authorization: `Bearer ${token}` } }),
           ]);
           setPayments(await paymentsResponse.json());
           setEnrollments(await enrollmentsResponse.json());
@@ -64,7 +65,7 @@ export default function CoursesPage() {
     setMessage("");
     try {
       const path = type === "course" ? `/api/dashboard/purchase/course/${id}` : `/api/dashboard/purchase/material/${id}`;
-      const response = await fetch(path, {
+      const response = await fetch(`${API_BASE}${path}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -76,7 +77,7 @@ export default function CoursesPage() {
       }
       setMessage(data.message || `Your payment request for ${title} has been sent to admin.`);
       if (token) {
-        const paymentsResponse = await fetch("/api/dashboard/payments", {
+        const paymentsResponse = await fetch(`${API_BASE}/dashboard/payments`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPayments(await paymentsResponse.json());

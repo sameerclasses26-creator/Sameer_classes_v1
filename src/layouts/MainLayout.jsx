@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
 import sameerLogo from "../Sameer.png";
@@ -36,7 +37,7 @@ export default function MainLayout() {
 
     const loadNotifications = async () => {
       try {
-        const response = await fetch("/api/dashboard/notifications", {
+        const response = await fetch(`${API_BASE}/dashboard/notifications`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -57,7 +58,7 @@ export default function MainLayout() {
   const markNotificationsRead = async () => {
     if (!token) return;
     try {
-      const response = await fetch("/api/dashboard/notifications/read", {
+      const response = await fetch(`${API_BASE}/dashboard/notifications/read`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -78,7 +79,7 @@ export default function MainLayout() {
   const clearNotifications = async () => {
     if (!token) return;
     try {
-      const response = await fetch("/api/dashboard/notifications", {
+      const response = await fetch(`${API_BASE}/dashboard/notifications`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

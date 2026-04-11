@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { API_BASE } from "../api";
 import SectionHeading from "../components/SectionHeading";
 
 const initialState = {
@@ -27,7 +28,7 @@ export default function ContactPage() {
     setStatus("");
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(`${API_BASE}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

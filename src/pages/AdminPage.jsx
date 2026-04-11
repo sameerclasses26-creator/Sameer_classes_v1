@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 
 const formatDate = (value) => {
@@ -125,7 +126,7 @@ export default function AdminPage() {
     .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
 
   const apiRequest = async (path, options = {}) => {
-    const response = await fetch(`/api${path}`, {
+    const response = await fetch(`${API_BASE}${path}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./ResultsPage.css";
 
@@ -56,7 +57,7 @@ export default function ResultsPage() {
   const loadResults = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/exams/student/results", {
+      const response = await fetch(`${API_BASE}/exams/student/results`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -80,7 +81,7 @@ export default function ResultsPage() {
   const loadDetailedResult = async (submissionId) => {
     setLoadingDetail(true);
     try {
-      const response = await fetch(`/api/exams/student/results/${submissionId}`, {
+      const response = await fetch(`${API_BASE}/exams/student/results/${submissionId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
