@@ -485,14 +485,18 @@ export default function AdminPage() {
         <tbody>
           {rows.map((student) => (
             <tr key={student._id}>
-              <td>{student.name}</td>
+              <td>
+                <Link to={`/admin/students/${student._id}`} className="student-name-link">
+                  {student.name}
+                </Link>
+              </td>
               <td>{student.email}</td>
               <td>{student.studentClass || "-"}</td>
               <td>
                 <div className="table-actions">
-                  <button className="ghost-button" type="button" onClick={() => handleSelectStudent(student._id)}>
+                  <Link to={`/admin/students/${student._id}`} className="ghost-button">
                     View
-                  </button>
+                  </Link>
                 </div>
               </td>
             </tr>
