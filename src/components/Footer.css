@@ -1,0 +1,88 @@
+.footer {
+  background-color: #fffdf8;
+  padding: 50px 0; /* remove side padding */
+}
+
+/* NEW wrapper for centering */
+.footer-container {
+  max-width: 1200px;   /* controls width */
+  margin: 0 auto;      /* centers horizontally */
+  padding: 0 20px;     /* adds space from left/right */
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+}
+
+/* Sections */
+.footer-section h2.logo {
+  color: #2c5cff;
+  margin-bottom: 10px;
+}
+
+.footer-section h3 {
+  margin-bottom: 15px;
+}
+
+.footer-section p {
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+/* Links */
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section ul li {
+  margin: 8px 0;
+}
+
+.footer-section ul li a {
+  text-decoration: none;
+  color: #333;
+}
+
+.footer-section ul li a:hover {
+  color: #2c5cff;
+}
+
+/* Social Icons */
+.social-icons {
+  margin-top: 10px;
+}
+
+.social-icons a {
+  margin-right: 10px;
+  font-size: 18px;
+  color: #333;
+}
+
+.social-icons a:hover {
+  color: #2c5cff;
+}
+
+/* Map */
+.map {
+  width: 100%;
+  height: 180px;
+  border: none;
+  border-radius: 8px;
+}
+
+/* Bottom */
+.footer-bottom {
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+  }
+}
