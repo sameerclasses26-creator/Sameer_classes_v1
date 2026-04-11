@@ -629,7 +629,6 @@ textarea {
   .student-dashboard-page .admin-hero-stat h3 {
     font-size: clamp(1.8rem, 2.2vw, 2.2rem);
   }
-}
 
 .pill,
 .section-heading span,
