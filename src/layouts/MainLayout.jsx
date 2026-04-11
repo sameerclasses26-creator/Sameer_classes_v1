@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
-import sameerLogo from "../sameer.png";
+import sameerLogo from "../Sameer.png";
 
 const navLinks = [
   { label: "Home", to: "/" },
