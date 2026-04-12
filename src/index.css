@@ -2162,7 +2162,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 56px 0;
+  padding: 56px 32px;
   background: rgba(255, 253, 248, 0.88);
   border: 1px solid var(--line);
   border-radius: 32px;

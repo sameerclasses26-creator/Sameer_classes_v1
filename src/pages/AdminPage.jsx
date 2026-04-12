@@ -53,10 +53,11 @@ const getDoubtStudentClass = (doubt) => {
 };
 
 const navItems = [
-  { key: "notifications", label: "Notifications" },
+ 
   { key: "students", label: "Students" },
   { key: "courses", label: "Courses" },
   { key: "materials", label: "Study materials" },
+   { key: "notifications", label: "Notifications" },
   { key: "payments", label: "Payments" },
   { key: "doubts", label: "Doubt Sessions" },
   { key: "completed-doubts", label: "Completed Doubts" },

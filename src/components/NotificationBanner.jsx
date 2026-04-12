@@ -50,39 +50,40 @@ export default function NotificationBanner({ token }) {
   };
 
   return (
+  <div
+    style={{
+      backgroundColor: typeColors[current.type] || "#0066cc",
+      color: "white",
+      padding: "12px 0",
+      overflow: "hidden",
+      whiteSpace: "nowrap",
+      position: "relative",
+    }}
+  >
+    {/* Marquee Content */}
     <div
       style={{
-        backgroundColor: typeColors[current.type] || "#0066cc",
-        color: "white",
-        padding: "16px 24px",
-        textAlign: "center",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "12px",
+        display: "inline-block",
+        paddingLeft: "100%",
+        animation: "marquee 15s linear infinite",
       }}
     >
-      <div style={{ flex: 1 }}>
-        <strong>{current.title}</strong>
-        <p style={{ margin: "4px 0 0 0", fontSize: "14px" }}>{current.message}</p>
-      </div>
-      {notifications.length > 1 && (
-        <button
-          onClick={nextNotification}
-          style={{
-            background: "rgba(255,255,255,0.3)",
-            border: "none",
-            color: "white",
-            padding: "6px 12px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "12px",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Next ({currentIndex + 1}/{notifications.length})
-        </button>
-      )}
+      {notifications.map((n, index) => (
+        <span key={n._id} style={{ marginRight: "60px" }}>
+          🔔 <strong>{n.title}</strong> — {n.message}
+        </span>
+      ))}
     </div>
-  );
+
+    {/* CSS Animation */}
+    <style>
+      {`
+        @keyframes marquee {
+          0%   { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+      `}
+    </style>
+  </div>
+);
 }
