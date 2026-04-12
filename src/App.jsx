@@ -9,6 +9,7 @@ import StudentExamPage from "./pages/StudentExamPage";
 import ContactPage from "./pages/ContactPage";
 import Spinner from "./components/Spinner";
 import CoursePaymentPage from "./pages/CoursePaymentPage";
+import MaterialPaymentPage from "./pages/MaterialPaymentPage";
 import CoursesPage from "./pages/CoursesPage";
 import GalleryPage from "./pages/GalleryPage";
 import HomePage from "./pages/HomePage";
@@ -19,6 +20,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ResultsPage from "./pages/ResultsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import StudentFeesPage from "./pages/StudentFeesPage";
 import { useAuth } from "./context/AuthContext";
 
 function ProtectedRoute({ children, admin, studentOnly }) {
@@ -60,6 +62,14 @@ export default function App() {
           element={
             <ProtectedRoute studentOnly>
               <CoursePaymentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/materials/:materialId/payment"
+          element={
+            <ProtectedRoute studentOnly>
+              <MaterialPaymentPage />
             </ProtectedRoute>
           }
         />
@@ -115,6 +125,14 @@ export default function App() {
           element={
             <ProtectedRoute studentOnly>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fees"
+          element={
+            <ProtectedRoute studentOnly>
+              <StudentFeesPage />
             </ProtectedRoute>
           }
         />

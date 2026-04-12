@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
+import AdminNotificationManager from "../components/AdminNotificationManager";
 import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 
@@ -52,6 +53,7 @@ const getDoubtStudentClass = (doubt) => {
 };
 
 const navItems = [
+  { key: "notifications", label: "Notifications" },
   { key: "students", label: "Students" },
   { key: "courses", label: "Courses" },
   { key: "materials", label: "Study materials" },
@@ -853,13 +855,9 @@ export default function AdminPage() {
             <div className="admin-sidebar-avatar">{userInitial}</div>
             <div>
               <p className="admin-sidebar-user">{user?.name || "Admin"}</p>
-              <p className="admin-sidebar-role">Administrator</p>
             </div>
           </div>
-          <div className="section-heading admin-sidebar-heading">
-            <span className="pill">Navigation</span>
-            <h3>Admin sections</h3>
-          </div>
+
           <div className="admin-nav-list">
             {navItems.map((item) => (
               <button
@@ -885,6 +883,17 @@ export default function AdminPage() {
             <div className="app-loading-block">
               <Spinner message="Loading section data..." />
             </div>
+          ) : null}
+
+          {!loading && activeSection === "notifications" ? (
+            <article className="card admin-section-card">
+              <div className="section-heading">
+                <span className="pill">System Announcements</span>
+                <h2>Manage Notifications</h2>
+                <p>Create and manage system-wide notifications visible to all students on their dashboard and homepage.</p>
+              </div>
+              <AdminNotificationManager token={token} />
+            </article>
           ) : null}
 
           {!loading && activeSection === "students" ? (

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { API_BASE } from "../api";
 import Spinner from "../components/Spinner";
+import NotificationList from "../components/NotificationList";
 import { useAuth } from "../context/AuthContext";
 
 const formatDate = (value) => {
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   const [selectedSection, setSelectedSection] = useState("currentCourse");
 
   const navItems = [
+    { id: "notifications", label: "Notifications" },
     { id: "currentCourse", label: "Current course" },
     { id: "studyMaterial", label: "Study material" },
     { id: "upcomingExams", label: "Upcoming exams" },
@@ -259,6 +261,7 @@ export default function DashboardPage() {
               <div className="section-heading">
                 <span className="pill">{navItems.find((item) => item.id === selectedSection)?.label}</span>
                 <h2>{{
+                  notifications: "Notifications",
                   currentCourse: "Current course",
                   studyMaterial: "Study material",
                   upcomingExams: "Upcoming exams",
@@ -269,6 +272,7 @@ export default function DashboardPage() {
                   bookSession: "Book session",
                 }[selectedSection]}</h2>
                 <p>
+                  {selectedSection === "notifications" && "View all system announcements and alerts."}
                   {selectedSection === "currentCourse" && "Track your enrolled courses and progress."}
                   {selectedSection === "studyMaterial" && "Access downloadable notes and resources for your classes."}
                   {selectedSection === "upcomingExams" && "Review exams scheduled for your enrolled subjects."}
@@ -279,6 +283,12 @@ export default function DashboardPage() {
                   {selectedSection === "bookSession" && "Request a new doubt session with your mentor."}
                 </p>
               </div>
+
+              {selectedSection === "notifications" && (
+                <div className="card" style={{ padding: "24px" }}>
+                  <NotificationList token={token} userRole={user?.role} />
+                </div>
+              )}
 
               {selectedSection === "currentCourse" && (
                 <div className="card-grid">

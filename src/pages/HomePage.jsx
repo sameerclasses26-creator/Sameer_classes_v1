@@ -5,6 +5,7 @@ import { API_BASE } from "../api";
 import SectionHeading from "../components/SectionHeading";
 import CourseCard from "../components/CourseCard";
 import Spinner from "../components/Spinner";
+import NotificationBanner from "../components/NotificationBanner";
 import shape1 from "../images/shape-1.png";
 import shape2 from "../images/shape-2.png";
 import shape3 from "../images/shape-3.png";
@@ -45,7 +46,7 @@ const features = [
 ];
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,7 +69,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="page">
+    <>
+      {token && <NotificationBanner token={token} />}
+      <div className="page">
       <section className="home">
         <div className="hero-shapes">
           <img className="shape shape-1" src={shape1} alt="shape" />
@@ -177,7 +180,7 @@ export default function HomePage() {
       <section className="contact-cta">
         <div>
           <p className="section-subtitle">Get In Touch</p>
-          <h2 className="section-title">Ready to join Sameer Classes?</h2>
+          <h2 className="section-title">Ready to join Sameer Classes??</h2>
           <p className="section-text">
             Contact us for admissions, course details, or to schedule a free counseling session. We are here to help you choose the right path.
           </p>
@@ -187,5 +190,6 @@ export default function HomePage() {
         </Link>
       </section>
     </div>
+    </>
   );
 }
