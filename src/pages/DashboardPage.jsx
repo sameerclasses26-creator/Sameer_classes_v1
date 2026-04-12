@@ -5,6 +5,7 @@ import { API_BASE } from "../api";
 import Spinner from "../components/Spinner";
 import NotificationList from "../components/NotificationList";
 import { useAuth } from "../context/AuthContext";
+import NotificationBanner from "../components/NotificationBanner";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -48,10 +49,11 @@ export default function DashboardPage() {
   const [selectedSection, setSelectedSection] = useState("currentCourse");
 
   const navItems = [
-    { id: "notifications", label: "Notifications" },
+    
     { id: "currentCourse", label: "Current course" },
     { id: "studyMaterial", label: "Study material" },
     { id: "upcomingExams", label: "Upcoming exams" },
+    { id: "notifications", label: "Notifications" },
     { id: "recentExamResult", label: "Recent exam result" },
     { id: "testPerformance", label: "Test performance" },
     { id: "fees", label: "Fees" },
@@ -212,7 +214,11 @@ export default function DashboardPage() {
   };
 
   return (
+    
     <div className="page section student-dashboard-page">
+      
+                 {token && <NotificationBanner token={token} />}
+               <br></br>
       <div className="dashboard-hero admin-hero">
         <div className="admin-hero-grid">
           <div className="admin-hero-copy">

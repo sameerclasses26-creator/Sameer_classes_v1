@@ -5,6 +5,7 @@ export default function AdminNotificationManager({ token }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     message: "",
@@ -18,6 +19,18 @@ export default function AdminNotificationManager({ token }) {
   useEffect(() => {
     fetchNotifications();
   }, [token]);
+
+  const handleEditNotification = (notification) => {
+  setFormData({
+    title: notification.title,
+    message: notification.message,
+    type: notification.type,
+    priority: notification.priority,
+    isActive: notification.isActive,
+  });
+  setEditingId(notification._id);
+  setShowForm(true);
+};
 
   const fetchNotifications = async () => {
     try {
@@ -36,44 +49,77 @@ export default function AdminNotificationManager({ token }) {
     }
   };
 
-  const handleCreateNotification = async (e) => {
-    e.preventDefault();
-    setFormError("");
-    setFormMessage("");
+const handleCreateNotification = async (e) => {
+  e.preventDefault();
+  setFormError("");
+  setFormMessage("");
 
-    if (!formData.title.trim() || !formData.message.trim()) {
-      setFormError("Title and message are required");
-      return;
-    }
+  if (!formData.title.trim() || !formData.message.trim()) {
+    setFormError("Title and message are required");
+    return;
+  }
 
-    try {
-      const response = await fetch(`${API_BASE}/notifications`, {
-        method: "POST",
+  try {
+    // 🔥 Decide API based on edit or create
+    const isEdit = !!editingId;
+
+    const response = await fetch(
+      isEdit
+        ? `${API_BASE}/notifications/${editingId}`
+        : `${API_BASE}/notifications`,
+      {
+        method: isEdit ? "PUT" : "POST", // ✅ only change
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
-      });
+      }
+    );
 
-      if (!response.ok) throw new Error("Failed to create notification");
-      const newNotification = await response.json();
-      setNotifications((prev) => [newNotification, ...prev]);
-      setFormData({
-        title: "",
-        message: "",
-        type: "announcement",
-        priority: "medium",
-        isActive: true,
-      });
-      setShowForm(false);
+    if (!response.ok)
+      throw new Error(
+        isEdit
+          ? "Failed to update notification"
+          : "Failed to create notification"
+      );
+
+    const savedNotification = await response.json();
+
+    // ✅ Update UI based on mode
+    if (isEdit) {
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === editingId ? savedNotification : n))
+      );
+      setFormMessage("Notification updated successfully!");
+    } else {
+      setNotifications((prev) => [savedNotification, ...prev]);
       setFormMessage("Notification created successfully!");
-      setTimeout(() => setFormMessage(""), 3000);
-    } catch (error) {
-      setFormError(error.message || "Failed to create notification");
-      console.error("Error:", error);
     }
-  };
+
+    // ✅ Reset form (same as your existing behavior)
+    setFormData({
+      title: "",
+      message: "",
+      type: "announcement",
+      priority: "medium",
+      isActive: true,
+    });
+
+    setShowForm(false);
+    setEditingId(null); // 🔥 important for edit reset
+
+    setTimeout(() => setFormMessage(""), 3000);
+  } catch (error) {
+    setFormError(
+      error.message ||
+        (editingId
+          ? "Failed to update notification"
+          : "Failed to create notification")
+    );
+    console.error("Error:", error);
+  }
+};
 
   const handleDeleteNotification = async (id) => {
     if (!confirm("Are you sure you want to delete this notification?")) return;
@@ -178,7 +224,11 @@ export default function AdminNotificationManager({ token }) {
         onMouseOver={(e) => e.target.style.backgroundColor = "#0052a3"}
         onMouseOut={(e) => e.target.style.backgroundColor = "#0066cc"}
       >
-        {showForm ? "Cancel" : "+ Create Notification"}
+       {showForm
+  ? "Cancel"
+  : editingId
+  ? "Edit Notification"
+  : "+ Create Notification"}
       </button>
 
       {/* Create Form */}
@@ -282,7 +332,7 @@ export default function AdminNotificationManager({ token }) {
                 fontSize: "14px",
               }}
             >
-              Post Notification
+              {editingId ? "Update Notification" : "Post Notification"}
             </button>
             <button
               type="button"
@@ -409,6 +459,21 @@ export default function AdminNotificationManager({ token }) {
                     Deactivate
                   </button>
                 )}
+                <button
+                    onClick={() => handleEditNotification(notification)}
+                    style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#0066cc",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                    }}
+                    >
+                    Edit
+                    </button>
                 <button
                   onClick={() => handleDeleteNotification(notification._id)}
                   style={{
