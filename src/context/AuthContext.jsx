@@ -14,6 +14,10 @@ export function AuthProvider({ children }) {
         setLoading(false);
         return;
       }
+      if (user) {
+    setLoading(false);
+    return;
+  }
 
       try {
         const response = await fetch(`${API_BASE}/auth/me`, {
@@ -62,9 +66,11 @@ export function AuthProvider({ children }) {
       throw new Error(data.message || "Something went wrong");
     }
 
-    localStorage.setItem("sameer-classes-token", data.token);
-    setToken(data.token);
-    setUser(data);
+const { token: newToken, ...userData } = data;
+  localStorage.setItem("sameer-classes-token", newToken);
+  setToken(newToken);
+  setUser(userData); // ← only store user fields, not the token
+  // ===== CHANGE END =====
     return data;
   };
 
