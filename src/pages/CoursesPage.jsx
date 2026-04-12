@@ -272,7 +272,13 @@ export default function CoursesPage() {
                       actionDisabled={status.disabled}
                       onAction={() => {
                         if (status.type === "buy") {
-                          handlePurchase("material", material._id, material.title);
+                          if (!token) {
+                            navigate("/login");
+                            return;
+                          }
+                          navigate(`/materials/${material._id}/payment`, {
+                            state: { material },
+                          });
                         }
                       }}
                     />
