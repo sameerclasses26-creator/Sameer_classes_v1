@@ -64,7 +64,7 @@ export default function NotificationList({ token, userRole }) {
   };
 
   return (
-    <div style={{ display: "grid", gap: "12px" }}>
+    <div style={{ display: "grid", gap: "12px", maxHeight: "600px", overflowY: "auto" }}>
       {notifications.map((notification) => (
         <div
           key={notification._id}

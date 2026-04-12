@@ -12,43 +12,56 @@ export default function StudentFeesPage() {
   const [expandedFee, setExpandedFee] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [selectedTab, setSelectedTab] = useState("fees");
+  const [payments, setPayments] = useState([]);
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+useEffect(() => {
+  if (!token) {
+    navigate("/login");
+    return;
+  }
 
-    const fetchData = async () => {
-      try {
-        const [feesRes, receiptsRes] = await Promise.all([
-          fetch(`${API_BASE}/fees`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${API_BASE}/fees/receipts/my`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+  const fetchData = async () => {
+    try {
+      const [feesRes, receiptsRes, paymentsRes] = await Promise.all([
+        fetch(`${API_BASE}/fees`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_BASE}/fees/receipts/my`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_BASE}/payments/my`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-        if (!feesRes.ok) throw new Error("Failed to fetch fees");
-        const feesData = await feesRes.json();
-        setFees(Array.isArray(feesData) ? feesData : []);
+      if (!feesRes.ok) throw new Error("Failed to fetch fees");
 
-        if (receiptsRes.ok) {
-          const receiptData = await receiptsRes.json();
-          setReceipts(Array.isArray(receiptData) ? receiptData : []);
-        }
-      } catch (error) {
-        console.error("Error fetching fees:", error);
-        setFees([]);
-        setReceipts([]);
-      } finally {
-        setLoading(false);
+      const feesData = await feesRes.json();
+      setFees(Array.isArray(feesData) ? feesData : []);
+
+      if (receiptsRes.ok) {
+        const receiptData = await receiptsRes.json();
+        setReceipts(Array.isArray(receiptData) ? receiptData : []);
       }
-    };
 
-    fetchData();
-  }, [token, navigate]);
+      if (paymentsRes.ok) {
+        const paymentsData = await paymentsRes.json();
+        setPayments(Array.isArray(paymentsData) ? paymentsData : []);
+      }
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setFees([]);
+      setReceipts([]);
+      setPayments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  fetchData();
+}, [token, navigate]);
 
   const getStatusColor = (status) => {
     const colors = {
@@ -60,11 +73,33 @@ export default function StudentFeesPage() {
     return colors[status] || "#999";
   };
 
+  const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case "Paid":
+      return "status-success";
+    case "Pending":
+      return "status-warning";
+    case "Overdue":
+      return "status-danger";
+    default:
+      return "";
+  }
+};
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString();
+};
+
   const totalFeeAmount = fees.reduce((sum, fee) => sum + (fee.totalAmount || 0), 0);
   const totalPaidAmount = fees.reduce((sum, fee) => sum + (fee.paidAmount || 0), 0);
   const totalPendingAmount = totalFeeAmount - totalPaidAmount;
 
+  const totalDue = payments
+  .filter((p) => p.status !== "Paid")
+  .reduce((sum, p) => sum + p.amount, 0);
+
   if (loading) return <Spinner />;
+
 
   return (
     <div style={{ padding: "32px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -79,6 +114,9 @@ export default function StudentFeesPage() {
           marginBottom: "32px",
         }}
       >
+       
+
+
         <div style={{ padding: "20px", backgroundColor: "#f5f5f5", borderRadius: "8px" }}>
           <p style={{ margin: "0 0 8px 0", color: "#666", fontSize: "14px" }}>Total Amount</p>
           <h3 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
@@ -99,6 +137,21 @@ export default function StudentFeesPage() {
         </div>
       </div>
 
+      <div
+  style={{
+    padding: "16px",
+    backgroundColor: "#ffebee",
+    borderRadius: "8px",
+    marginBottom: "24px",
+  }}
+>
+  <strong style={{ color: "#c62828" }}>
+    Total Due: ₹{totalDue.toLocaleString()}
+  </strong>
+</div>
+
+
+
       {/* Tabs */}
       <div style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "2px solid #e0e0e0" }}>
         <button
@@ -117,6 +170,13 @@ export default function StudentFeesPage() {
         >
           Fees & Installments
         </button>
+        <button onClick={() => setSelectedTab("history")}>
+  Payment History
+</button>
+
+<button onClick={() => setSelectedTab("due")}>
+  Pending Payments
+</button>
         <button
           onClick={() => setSelectedTab("receipts")}
           style={{
@@ -134,6 +194,72 @@ export default function StudentFeesPage() {
           Receipts ({receipts.length})
         </button>
       </div>
+
+
+      {selectedTab === "history" && (
+  <div className="card-grid">
+    {payments.filter(p => p.status === "Paid").length ? (
+      payments
+        .filter((p) => p.status === "Paid")
+        .map((payment) => (
+          <article className="card" key={payment._id}>
+            <div className="card-topline">
+              <span>{payment.notes || payment.method}</span>
+              <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>
+                {payment.status}
+              </span>
+            </div>
+            <h3>₹{payment.amount}</h3>
+            <div className="card-meta">
+              <span>{formatDate(payment.paidAt)}</span>
+            </div>
+          </article>
+        ))
+    ) : (
+      <article className="card">No payment history available yet.</article>
+    )}
+  </div>
+)}
+
+{selectedTab === "due" && (
+  <div className="card-grid">
+    {payments.filter(p => p.status !== "Paid").length ? (
+      payments
+        .filter((p) => p.status !== "Paid")
+        .map((payment) => (
+          <article className="card" key={payment._id}>
+            <div className="card-topline">
+              <span>{payment.notes || payment.method}</span>
+              <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>
+                {payment.status}
+              </span>
+            </div>
+            <h3>₹{payment.amount}</h3>
+            <div className="card-meta">
+              <span>Due: {formatDate(payment.dueDate)}</span>
+            </div>
+
+            {/* 🔥 Pay Now */}
+            <button
+              onClick={() =>
+                navigate("/course-payment", {
+                  state: {
+                    amount: payment.amount,
+                    paymentId: payment._id,
+                  },
+                })
+              }
+              className="pay-btn"
+            >
+              Pay Now
+            </button>
+          </article>
+        ))
+    ) : (
+      <article className="card">No pending payments 🎉</article>
+    )}
+  </div>
+)}
 
       {/* Fees Tab */}
       {selectedTab === "fees" && (
