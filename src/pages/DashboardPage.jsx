@@ -56,7 +56,7 @@ export default function DashboardPage() {
     { id: "notifications", label: "Notifications" },
     { id: "recentExamResult", label: "Recent exam result" },
     { id: "testPerformance", label: "Test performance" },
-    { id: "fees", label: "Fees" },
+    { id: "fees", label: "Fees", link: "/fees" },
     { id: "recordedSession", label: "Upcoming recorded session" },
     { id: "bookSession", label: "Book session" },
   ];
@@ -245,19 +245,30 @@ export default function DashboardPage() {
         <aside className="dashboard-sidebar card">
           <nav className="sidebar-nav">
             {navItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`sidebar-item ${selectedSection === item.id ? "active" : ""}`}
-                onClick={() => setSelectedSection(item.id)}
-              >
-                {item.label}
-              </button>
+              item.link ? (
+                <Link
+                  key={item.id}
+                  to={item.link}
+                  className={`sidebar-item ${selectedSection === item.id ? "active" : ""}`}
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`sidebar-item ${selectedSection === item.id ? "active" : ""}`}
+                  onClick={() => setSelectedSection(item.id)}
+                >
+                  {item.label}
+                </button>
+              )
             ))}
           </nav>
         </aside>
 
-        <main className="dashboard-main">
+        <main className="dashboard-main" style={{ overflowY: "auto", maxHeight: "calc(100vh - 200px)", paddingBottom: "60px" }}>
           {loading ? (
             <div className="app-loading-block">
               <Spinner message="Loading dashboard..." />
@@ -291,7 +302,7 @@ export default function DashboardPage() {
               </div>
 
               {selectedSection === "notifications" && (
-                <div className="card" style={{ padding: "24px" }}>
+                <div className="card" style={{ padding: "24px", maxHeight: "calc(100vh - 400px)", overflowY: "auto" }}>
                   <NotificationList token={token} userRole={user?.role} />
                 </div>
               )}
@@ -420,23 +431,28 @@ export default function DashboardPage() {
           )}
 
           {selectedSection === "fees" && (
-            <div className="card-grid">
-              {dashboard?.payments?.length ? (
-                dashboard.payments.map((payment) => (
-                  <article className="card" key={payment._id}>
-                    <div className="card-topline">
-                      <span>{payment.notes || payment.method}</span>
-                      <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>{payment.status}</span>
-                    </div>
-                    <h3>₹{payment.amount}</h3>
-                    <div className="card-meta">
-                      <span>{formatDate(payment.paidAt || payment.dueDate)}</span>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <article className="card">No payment history available yet.</article>
-              )}
+            <div>
+              <Link to="/fees" className="solid-button" style={{ marginBottom: "16px", display: "inline-block" }}>
+                View Full Fees Details →
+              </Link>
+              <div className="card-grid">
+                {dashboard?.payments?.length ? (
+                  dashboard.payments.map((payment) => (
+                    <article className="card" key={payment._id}>
+                      <div className="card-topline">
+                        <span>{payment.notes || payment.method}</span>
+                        <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>{payment.status}</span>
+                      </div>
+                      <h3>₹{payment.amount}</h3>
+                      <div className="card-meta">
+                        <span>{formatDate(payment.paidAt || payment.dueDate)}</span>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <article className="card">No payment history available yet.</article>
+                )}
+              </div>
             </div>
           )}
 
