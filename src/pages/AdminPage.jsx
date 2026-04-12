@@ -57,6 +57,7 @@ const navItems = [
   { key: "materials", label: "Study materials" },
   { key: "payments", label: "Payments" },
   { key: "doubts", label: "Doubt Sessions" },
+  { key: "completed-doubts", label: "Completed Doubts" },
   { key: "exams", label: "Exams Management" },
 ];
 
@@ -99,6 +100,7 @@ export default function AdminPage() {
   const [summary, setSummary] = useState(null);
   const [students, setStudents] = useState([]);
   const [allDoubts, setAllDoubts] = useState([]);
+  const [completedDoubts, setCompletedDoubts] = useState([]);
   const [payments, setPayments] = useState([]);
   const [showAllPayments, setShowAllPayments] = useState(false);
   const [coursesList, setCoursesList] = useState([]);
@@ -124,6 +126,7 @@ export default function AdminPage() {
   const [sectionLoaded, setSectionLoaded] = useState({
     payments: false,
     doubts: false,
+    "completed-doubts": false,
     courses: false,
     materials: false,
   });
@@ -181,6 +184,12 @@ export default function AdminPage() {
     setAllDoubts(data);
   };
 
+  const loadCompletedDoubts = async () => {
+    const data = await apiRequest("/admin/doubts/completed");
+    setCompletedDoubts(data);
+    setSectionLoaded((prev) => ({ ...prev, "completed-doubts": true }));
+  };
+
   const loadPayments = async () => {
     const data = await apiRequest("/admin/payments");
     setPayments(data);
@@ -210,6 +219,12 @@ export default function AdminPage() {
       if (sectionLoaded.doubts) return;
       await loadDoubts();
       setSectionLoaded((prev) => ({ ...prev, doubts: true }));
+      return;
+    }
+
+    if (section === "completed-doubts") {
+      if (sectionLoaded["completed-doubts"]) return;
+      await loadCompletedDoubts();
       return;
     }
 
@@ -449,6 +464,13 @@ export default function AdminPage() {
       payload.adminResponse = doubtAction.remarks.trim();
     }
 
+    if (doubtAction.mode === "reschedule") {
+      payload.scheduledAt = doubtAction.scheduledAt;
+      if (doubtAction.googleMeetLink.trim()) {
+        payload.googleMeetLink = doubtAction.googleMeetLink;
+      }
+    }
+
     try {
       await apiRequest(`/admin/doubts/${doubtAction.doubtId}`, {
         method: "PUT",
@@ -457,7 +479,9 @@ export default function AdminPage() {
       setStatusMessage(
         doubtAction.mode === "accept"
           ? "Doubt session scheduled and notification sent to student."
-          : "Doubt session rejected with remarks."
+          : doubtAction.mode === "reject"
+          ? "Doubt session rejected with remarks."
+          : "Doubt session rescheduled successfully."
       );
       setDoubtAction(initialDoubtAction);
       await loadDoubts();
@@ -469,6 +493,68 @@ export default function AdminPage() {
     } catch (error) {
       setStatusMessage(error.message);
     }
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    if (!window.confirm("Are you sure you want to delete this course? This will also remove all enrollments.")) return;
+    try {
+      await apiRequest(`/admin/courses/${courseId}`, { method: "DELETE" });
+      await loadSummary();
+      await loadCourses();
+      setStatusMessage("Course deleted successfully.");
+    } catch (error) {
+      setStatusMessage(error.message);
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId) => {
+    if (!window.confirm("Are you sure you want to delete this study material?")) return;
+    try {
+      await apiRequest(`/admin/materials/${materialId}`, { method: "DELETE" });
+      await loadSummary();
+      await loadMaterials();
+      setStatusMessage("Study material deleted successfully.");
+    } catch (error) {
+      setStatusMessage(error.message);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (!window.confirm("Are you sure you want to delete this payment record?")) return;
+    try {
+      await apiRequest(`/admin/payments/${paymentId}`, { method: "DELETE" });
+      await loadSummary();
+      await loadPayments();
+      setStatusMessage("Payment record deleted successfully.");
+    } catch (error) {
+      setStatusMessage(error.message);
+    }
+  };
+
+  const handleDeleteDoubt = async (doubtId) => {
+    if (!window.confirm("Are you sure you want to delete this doubt session?")) return;
+    try {
+      await apiRequest(`/admin/doubts/${doubtId}`, { method: "DELETE" });
+      await loadDoubts();
+      setSectionLoaded((prev) => ({ ...prev, doubts: true }));
+      if (selectedStudent?.student?._id) {
+        await loadStudentDetails(selectedStudent.student._id);
+      }
+      await loadSummary();
+      setStatusMessage("Doubt session deleted successfully.");
+    } catch (error) {
+      setStatusMessage(error.message);
+    }
+  };
+
+  const handleRescheduleDoubt = (doubt) => {
+    setDoubtAction({
+      doubtId: doubt._id,
+      mode: "reschedule",
+      scheduledAt: formatDateTimeLocal(doubt.scheduledAt || doubt.preferredDate),
+      googleMeetLink: doubt.googleMeetLink || "",
+      remarks: "",
+    });
   };
 
   const renderStudentTable = (rows) => (
@@ -591,6 +677,19 @@ export default function AdminPage() {
                 </div>
               ) : null}
 
+              {(doubt.status === "Confirmed" || doubt.status === "Completed") && doubt.status !== "Pending" ? (
+                <div className="card-meta admin-doubt-actions" style={{ gap: 8, marginTop: 12 }}>
+                  {doubt.status === "Confirmed" ? (
+                    <button className="ghost-button" type="button" onClick={() => handleRescheduleDoubt(doubt)}>
+                      Reschedule
+                    </button>
+                  ) : null}
+                  <button className="ghost-button" type="button" onClick={() => handleDeleteDoubt(doubt._id)} style={{ color: "var(--danger-red)" }}>
+                    Delete
+                  </button>
+                </div>
+              ) : null}
+
               {isActionOpen ? (
                 <form className="admin-doubt-form" onSubmit={handleDoubtActionSubmit} style={{ marginTop: 12, display: "grid", gap: 10 }}>
                   {doubtAction.mode === "accept" ? (
@@ -643,6 +742,33 @@ export default function AdminPage() {
                         required
                       />
                     </label>
+                  ) : null}
+
+                  {doubtAction.mode === "reschedule" ? (
+                    <>
+                      <label>
+                        New scheduled time
+                        <input
+                          type="datetime-local"
+                          value={doubtAction.scheduledAt}
+                          onChange={(event) =>
+                            setDoubtAction((prev) => ({ ...prev, scheduledAt: event.target.value }))
+                          }
+                          required
+                        />
+                      </label>
+                      <label>
+                        Google Meet link (optional)
+                        <input
+                          type="url"
+                          value={doubtAction.googleMeetLink}
+                          onChange={(event) =>
+                            setDoubtAction((prev) => ({ ...prev, googleMeetLink: event.target.value }))
+                          }
+                          placeholder="https://meet.google.com/..."
+                        />
+                      </label>
+                    </>
                   ) : null}
 
                   <div className="card-meta" style={{ gap: 8 }}>
@@ -866,6 +992,9 @@ export default function AdminPage() {
                                 <button className="ghost-button" type="button" onClick={() => handleEditCourse(course)}>
                                   Edit
                                 </button>
+                                <button className="ghost-button" type="button" onClick={() => handleDeleteCourse(course._id)} style={{ color: "var(--danger-red)" }}>
+                                  Delete
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -914,6 +1043,9 @@ export default function AdminPage() {
                               <div className="table-actions">
                                 <button className="ghost-button" type="button" onClick={() => handleEditMaterial(material)}>
                                   Edit
+                                </button>
+                                <button className="ghost-button" type="button" onClick={() => handleDeleteMaterial(material._id)} style={{ color: "var(--danger-red)" }}>
+                                  Delete
                                 </button>
                               </div>
                             </td>
@@ -971,13 +1103,16 @@ export default function AdminPage() {
                           </td>
                           <td>{payment.notes || "-"}</td>
                           <td>
-                            {payment.status === "Pending" ? (
-                              <button className="ghost-button" type="button" onClick={() => handlePaymentStatus(payment)}>
-                                Mark Paid
+                            <div className="table-actions">
+                              {payment.status === "Pending" ? (
+                                <button className="ghost-button" type="button" onClick={() => handlePaymentStatus(payment)}>
+                                  Mark Paid
+                                </button>
+                              ) : null}
+                              <button className="ghost-button" type="button" onClick={() => handleDeletePayment(payment._id)} style={{ color: "var(--danger-red)" }}>
+                                Delete
                               </button>
-                            ) : (
-                              "-"
-                            )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1000,6 +1135,17 @@ export default function AdminPage() {
                 <p>Review pending, scheduled, completed, and rejected sessions in one place.</p>
               </div>
               {renderDoubtCards(allDoubts)}
+            </article>
+          ) : null}
+
+          {!loading && activeSection === "completed-doubts" ? (
+            <article className="card admin-section-card">
+              <div className="section-heading">
+                <span className="pill">Completed doubts</span>
+                <h2>Completed doubt session history</h2>
+                <p>View all doubt sessions that have been completed.</p>
+              </div>
+              {renderDoubtCards(completedDoubts)}
             </article>
           ) : null}
 
