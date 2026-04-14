@@ -143,6 +143,22 @@ export default function DashboardPage() {
     };
 
     loadAll();
+
+    // Auto-refresh dashboard every 12 seconds to update payment status
+    const interval = setInterval(loadAll, 12000);
+
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadAll();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [token]);
 
   const handleBookingSubmit = async (event) => {
@@ -268,7 +284,7 @@ export default function DashboardPage() {
           </nav>
         </aside>
 
-        <main className="dashboard-main" style={{ overflowY: "auto", maxHeight: "calc(100vh - 200px)", paddingBottom: "60px" }}>
+        <main className="dashboard-main">
           {loading ? (
             <div className="app-loading-block">
               <Spinner message="Loading dashboard..." />
@@ -302,7 +318,7 @@ export default function DashboardPage() {
               </div>
 
               {selectedSection === "notifications" && (
-                <div className="card" style={{ padding: "24px", maxHeight: "calc(100vh - 400px)", overflowY: "auto" }}>
+                <div className="card" style={{ padding: "24px" }}>
                   <NotificationList token={token} userRole={user?.role} />
                 </div>
               )}
@@ -336,8 +352,8 @@ export default function DashboardPage() {
                 dashboard.purchasedMaterials.map((material) => (
                   <article className="card" key={material._id}>
                     <div className="card-topline">
-                      <span>{material.category}</span>
-                      <span>{material.course || "Study pack"}</span>
+                      <span>Study pack</span>
+                      <span>{material.course }</span>
                     </div>
                     <h3>{material.title}</h3>
                     <p>{material.description}</p>
