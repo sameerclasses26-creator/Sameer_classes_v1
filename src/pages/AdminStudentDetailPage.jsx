@@ -29,6 +29,8 @@ export default function AdminStudentDetailPage() {
   const [formData, setFormData] = useState({});
   const [activeTab, setActiveTab] = useState("overview");
   const [message, setMessage] = useState("");
+  const [feeForm, setFeeForm] = useState({ amount: "", dueDate: "", feeType: "Monthly coaching fee", notes: "" });
+  const [creatingFee, setCreatingFee] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,6 +100,49 @@ export default function AdminStudentDetailPage() {
     }
   };
 
+  const handleCreateFee = async (e) => {
+    e.preventDefault();
+    if (!feeForm.amount || !feeForm.dueDate) {
+      setMessage("Amount and due date are required");
+      return;
+    }
+
+    setCreatingFee(true);
+    try {
+      const response = await fetch(`${API_BASE}/admin/students/${studentId}/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: parseFloat(feeForm.amount),
+          dueDate: new Date(feeForm.dueDate).toISOString(),
+          feeType: feeForm.feeType,
+          notes: feeForm.notes,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to create fee");
+
+      setMessage("Fee created successfully! Notification sent to student.");
+      setFeeForm({ amount: "", dueDate: "", feeType: "Monthly coaching fee", notes: "" });
+      
+      // Refresh student data
+      const dataRes = await fetch(`${API_BASE}/admin/students/${studentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const updatedData = await dataRes.json();
+      setData(updatedData);
+      
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) {
+      setMessage(error.message || "Error creating fee");
+    } finally {
+      setCreatingFee(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page section">
@@ -119,26 +164,62 @@ export default function AdminStudentDetailPage() {
 
   return (
     <div className="page section admin-student-detail">
-      <div className="card-topline">
-        <button className="ghost-button" onClick={() => navigate("/admin")} type="button">
-          ← Back
-        </button>
-        <h1>{student.name}</h1>
+      <div className="card-topline" style={{ justifyContent: "space-between", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <button 
+            className="ghost-button" 
+            onClick={() => navigate("/admin")} 
+            type="button"
+            style={{ padding: "6px 12px", fontSize: "14px" }}
+          >
+            ← Back
+          </button>
+          <h1 style={{ margin: 0 }}>{student.name}</h1>
+        </div>
         {editing ? (
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="solid-button" onClick={handleSaveChanges} type="button">
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button 
+              className="solid-button" 
+              onClick={handleSaveChanges} 
+              type="button"
+              style={{ padding: "8px 16px", fontSize: "14px", whiteSpace: "nowrap" }}
+            >
               Save Changes
             </button>
-            <button className="ghost-button" onClick={() => setEditing(false)} type="button">
+            <button 
+              className="ghost-button" 
+              onClick={() => setEditing(false)} 
+              type="button"
+              style={{ padding: "8px 16px", fontSize: "14px", whiteSpace: "nowrap" }}
+            >
               Cancel
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="ghost-button" onClick={() => setEditing(true)} type="button">
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button 
+              className="ghost-button" 
+              onClick={() => setEditing(true)} 
+              type="button"
+              style={{ padding: "8px 16px", fontSize: "14px", whiteSpace: "nowrap" }}
+            >
               Edit Profile
             </button>
-            <button className="solid-button" style={{ background: "#c84949" }} onClick={handleDeleteStudent} type="button">
+            <button 
+              style={{ 
+                padding: "8px 16px", 
+                fontSize: "14px", 
+                background: "#c84949",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "600",
+                whiteSpace: "nowrap"
+              }} 
+              onClick={handleDeleteStudent} 
+              type="button"
+            >
               Delete Student
             </button>
           </div>
@@ -323,22 +404,141 @@ export default function AdminStudentDetailPage() {
 
       {activeTab === "payments" && (
         <div className="detail-section">
+          <div style={{ marginBottom: "32px" }}>
+            <h2 style={{ marginBottom: "16px" }}>Create Fee Request</h2>
+            <form onSubmit={handleCreateFee} className="detail-form" style={{ maxWidth: "600px" }}>
+              <div className="form-group">
+                <label>Fee Type</label>
+                <select
+                  value={feeForm.feeType}
+                  onChange={(e) => setFeeForm({ ...feeForm, feeType: e.target.value })}
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+                >
+                  <option value="Monthly coaching fee">Monthly coaching fee</option>
+                  <option value="Quarterly fee">Quarterly fee</option>
+                  <option value="Admission fee">Admission fee</option>
+                  <option value="Exam fee">Exam fee</option>
+                  <option value="Materials fee">Materials fee</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Amount (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={feeForm.amount}
+                  onChange={(e) => setFeeForm({ ...feeForm, amount: e.target.value })}
+                  placeholder="Enter amount"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Due Date</label>
+                <input
+                  type="date"
+                  value={feeForm.dueDate}
+                  onChange={(e) => setFeeForm({ ...feeForm, dueDate: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Additional Notes</label>
+                <textarea
+                  value={feeForm.notes}
+                  onChange={(e) => setFeeForm({ ...feeForm, notes: e.target.value })}
+                  placeholder="Optional notes for the student"
+                  rows="2"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={creatingFee}
+                className="solid-button"
+                style={{ background: creatingFee ? "#ccc" : "#0066cc" }}
+              >
+                {creatingFee ? "Creating..." : "Create Fee Request"}
+              </button>
+            </form>
+          </div>
+
           <h2>Payment History</h2>
           {payments.length ? (
-            <div className="payment-list">
-              {payments.map((payment) => (
-                <article className="card" key={payment._id}>
-                  <div className="card-header">
-                    <h3>₹{payment.amount}</h3>
-                    <span className={`pill pill-${payment.status.toLowerCase()}`}>{payment.status}</span>
-                  </div>
-                  <p>{payment.notes}</p>
-                  <div className="card-details">
-                    <span>Due: {formatDate(payment.dueDate)}</span>
-                    {payment.paidAt && <span>Paid: {formatDate(payment.paidAt)}</span>}
-                  </div>
-                </article>
-              ))}
+            <div className="payment-list" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
+              {payments.map((payment) => {
+                // Extract item name from notes
+                let itemName = "Payment";
+                if (payment.notes) {
+                  const match = payment.notes.match(/(?:course|material|fee):\s*([^N]+?)(?:\s+Name:|$)/i);
+                  if (match) {
+                    itemName = match[1].trim();
+                  } else if (payment.notes.includes("Monthly")) {
+                    itemName = "Monthly coaching fee";
+                  } else if (payment.notes.includes("Quarterly")) {
+                    itemName = "Quarterly fee";
+                  } else {
+                    itemName = payment.notes.substring(0, 50);
+                  }
+                }
+
+                return (
+                  <article className="card" key={payment._id} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                    {/* Header with amount and status */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                      <div>
+                        <p style={{ margin: "0 0 4px 0", fontSize: "11px", color: "#999", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Payment {payment.status.toLowerCase()}
+                        </p>
+                        <h3 style={{ margin: 0, fontSize: "26px", fontWeight: "700", color: payment.status === "Paid" ? "#22c55e" : "#ff9800" }}>
+                          ₹{payment.amount?.toLocaleString()}
+                        </h3>
+                      </div>
+                      <span style={{
+                        padding: "6px 14px",
+                        backgroundColor: payment.status === "Paid" ? "#dcfce7" : "#fff3cd",
+                        color: payment.status === "Paid" ? "#166534" : "#856404",
+                        borderRadius: "20px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {payment.status === "Paid" ? "✓ Paid" : "⏳ " + payment.status}
+                      </span>
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{ height: "1px", backgroundColor: "#e5e7eb", margin: "12px 0" }} />
+
+                    {/* Details */}
+                    <div style={{ display: "grid", gap: "10px" }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>ITEM</p>
+                        <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333", fontWeight: "500" }}>
+                          {itemName}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>
+                          {payment.status === "Paid" ? "PAID ON" : "DUE DATE"}
+                        </p>
+                        <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>
+                          {payment.status === "Paid" ? formatDate(payment.paidAt) : formatDate(payment.dueDate)}
+                        </p>
+                      </div>
+
+                      {payment.method && (
+                        <div>
+                          <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>METHOD</p>
+                          <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>
+                            {payment.method}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <p>No payments</p>

@@ -59,8 +59,23 @@ useEffect(() => {
     }
   };
 
-
   fetchData();
+
+  // Auto-refresh payments every 10 seconds to show pending payments
+  const interval = setInterval(fetchData, 10000);
+
+  // Also refresh when page becomes visible (tab is focused)
+  const handleVisibilityChange = () => {
+    if (!document.hidden) {
+      fetchData();
+    }
+  };
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  return () => {
+    clearInterval(interval);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  };
 }, [token, navigate]);
 
   const getStatusColor = (status) => {
@@ -90,109 +105,156 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString();
 };
 
-  const totalFeeAmount = fees.reduce((sum, fee) => sum + (fee.totalAmount || 0), 0);
-  const totalPaidAmount = fees.reduce((sum, fee) => sum + (fee.paidAmount || 0), 0);
-  const totalPendingAmount = totalFeeAmount - totalPaidAmount;
-
-  const totalDue = payments
-  .filter((p) => p.status !== "Paid")
-  .reduce((sum, p) => sum + p.amount, 0);
+  // Calculate totals including both fees and payments
+  const feeTotal = fees.reduce((sum, fee) => sum + (fee.totalAmount || 0), 0);
+  const feePaid = fees.reduce((sum, fee) => sum + (fee.paidAmount || 0), 0);
+  
+  const paymentTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const paymentPaid = payments
+    .filter((p) => p.status === "Paid")
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  
+  const totalFeeAmount = feeTotal + paymentTotal;
+  const totalPaidAmount = feePaid + paymentPaid;
+  
+  // Pending includes both unpaid course fees and pending payment requests
+  const pendingFromFees = feeTotal - feePaid;
+  const pendingFromPayments = payments
+    .filter((p) => p.status === "Pending")
+    .reduce((sum, p) => sum + p.amount, 0);
+  
+  const totalPendingAmount = pendingFromFees + pendingFromPayments;
+  const totalDue = totalPendingAmount;
 
   if (loading) return <Spinner />;
 
-
   return (
-    <div style={{ padding: "32px", maxWidth: "1200px", margin: "0 auto" }}>
-      <h1 style={{ marginBottom: "24px" }}>My Fees</h1>
+    <div style={{ padding: "32px 20px", maxWidth: "1200px", margin: "0 auto" }}>
+      {/* Header Section */}
+      <div style={{
+        background: "linear-gradient(135deg, #0066cc 0%, #004d99 100%)",
+        color: "white",
+        padding: "40px 32px",
+        borderRadius: "16px",
+        marginBottom: "32px",
+        boxShadow: "0 4px 20px rgba(0, 102, 204, 0.15)"
+      }}>
+        <h1 style={{ margin: "0 0 8px 0", fontSize: "32px", fontWeight: "700" }}>My Fees</h1>
+        <p style={{ margin: 0, fontSize: "16px", opacity: "0.9" }}>Track your course fees and payment history</p>
+      </div>
 
       {/* Summary Cards */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "16px",
-          marginBottom: "32px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "20px",
+          marginBottom: "40px",
         }}
       >
-       
-
-
-        <div style={{ padding: "20px", backgroundColor: "#f5f5f5", borderRadius: "8px" }}>
-          <p style={{ margin: "0 0 8px 0", color: "#666", fontSize: "14px" }}>Total Amount</p>
-          <h3 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
+        <div style={{
+          padding: "24px",
+          backgroundColor: "#f8f9ff",
+          borderRadius: "12px",
+          border: "1px solid #e8ecf1",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+          transition: "all 0.3s ease"
+        }}>
+          <p style={{ margin: "0 0 12px 0", color: "#666", fontSize: "13px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Amount</p>
+          <h3 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "#0066cc" }}>
             ₹{totalFeeAmount.toLocaleString()}
           </h3>
         </div>
-        <div style={{ padding: "20px", backgroundColor: "#e8f5e9", borderRadius: "8px" }}>
-          <p style={{ margin: "0 0 8px 0", color: "#666", fontSize: "14px" }}>Paid Amount</p>
-          <h3 style={{ margin: 0, fontSize: "24px", fontWeight: "600", color: "#51cf66" }}>
+        <div style={{
+          padding: "24px",
+          backgroundColor: "#f0fdf4",
+          borderRadius: "12px",
+          border: "1px solid #dcfce7",
+          boxShadow: "0 2px 8px rgba(34, 197, 94, 0.1)",
+          transition: "all 0.3s ease"
+        }}>
+          <p style={{ margin: "0 0 12px 0", color: "#666", fontSize: "13px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Paid Amount</p>
+          <h3 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "#22c55e" }}>
             ₹{totalPaidAmount.toLocaleString()}
           </h3>
         </div>
-        <div style={{ padding: "20px", backgroundColor: "#ffebee", borderRadius: "8px" }}>
-          <p style={{ margin: "0 0 8px 0", color: "#666", fontSize: "14px" }}>Pending Amount</p>
-          <h3 style={{ margin: 0, fontSize: "24px", fontWeight: "600", color: "#ff6b6b" }}>
+        <div style={{
+          padding: "24px",
+          backgroundColor: "#fef2f2",
+          borderRadius: "12px",
+          border: "1px solid #fee2e2",
+          boxShadow: "0 2px 8px rgba(239, 68, 68, 0.1)",
+          transition: "all 0.3s ease"
+        }}>
+          <p style={{ margin: "0 0 12px 0", color: "#666", fontSize: "13px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending Amount</p>
+          <h3 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "#ef4444" }}>
             ₹{totalPendingAmount.toLocaleString()}
           </h3>
         </div>
       </div>
 
-      <div
-  style={{
-    padding: "16px",
-    backgroundColor: "#ffebee",
-    borderRadius: "8px",
-    marginBottom: "24px",
-  }}
->
-  <strong style={{ color: "#c62828" }}>
-    Total Due: ₹{totalDue.toLocaleString()}
-  </strong>
-</div>
-
-
+      {totalDue > 0 && (
+        <div
+          style={{
+            padding: "20px 24px",
+            background: "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)",
+            borderRadius: "12px",
+            marginBottom: "32px",
+            border: "2px solid #fecaca",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px"
+          }}
+        >
+          <span style={{ fontSize: "24px" }}>⚠️</span>
+          <div>
+            <strong style={{ color: "#991f1f", fontSize: "16px" }}>
+              Amount Due: ₹{totalDue.toLocaleString()}
+            </strong>
+            <p style={{ margin: "4px 0 0 0", color: "#7f1d1d", fontSize: "14px" }}>Please complete your payment to avoid late fees</p>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "2px solid #e0e0e0" }}>
-        <button
-          onClick={() => setSelectedTab("fees")}
-          style={{
-            padding: "12px 0",
-            fontSize: "16px",
-            fontWeight: selectedTab === "fees" ? "600" : "400",
-            color: selectedTab === "fees" ? "#0066cc" : "#666",
-            border: "none",
-            borderBottom: selectedTab === "fees" ? "2px solid #0066cc" : "none",
-            cursor: "pointer",
-            background: "none",
-            marginBottom: "-2px",
-          }}
-        >
-          Fees & Installments
-        </button>
-        <button onClick={() => setSelectedTab("history")}>
-  Payment History
-</button>
-
-<button onClick={() => setSelectedTab("due")}>
-  Pending Payments
-</button>
-        <button
-          onClick={() => setSelectedTab("receipts")}
-          style={{
-            padding: "12px 0",
-            fontSize: "16px",
-            fontWeight: selectedTab === "receipts" ? "600" : "400",
-            color: selectedTab === "receipts" ? "#0066cc" : "#666",
-            border: "none",
-            borderBottom: selectedTab === "receipts" ? "2px solid #0066cc" : "none",
-            cursor: "pointer",
-            background: "none",
-            marginBottom: "-2px",
-          }}
-        >
-          Receipts ({receipts.length})
-        </button>
+      <div style={{
+        display: "flex",
+        gap: "8px",
+        marginBottom: "32px",
+        borderBottom: "2px solid #e0e0e0",
+        overflowX: "auto",
+        paddingBottom: "0"
+      }}>
+        {[
+          { id: "fees", label: "Fees & Installments", icon: "📋" },
+          { id: "history", label: "Payment History", icon: "✓" },
+          { id: "due", label: "Pending Payments", icon: "⏳" },
+          { id: "receipts", label: `Receipts (${receipts.length})`, icon: "🧾" }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSelectedTab(tab.id)}
+            style={{
+              padding: "14px 20px",
+              fontSize: "14px",
+              fontWeight: selectedTab === tab.id ? "600" : "500",
+              color: selectedTab === tab.id ? "#0066cc" : "#666",
+              border: "none",
+              borderBottom: selectedTab === tab.id ? "3px solid #0066cc" : "none",
+              cursor: "pointer",
+              background: "none",
+              marginBottom: "-2px",
+              transition: "all 0.3s ease",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
 
@@ -201,62 +263,190 @@ const formatDate = (date) => {
     {payments.filter(p => p.status === "Paid").length ? (
       payments
         .filter((p) => p.status === "Paid")
-        .map((payment) => (
-          <article className="card" key={payment._id}>
-            <div className="card-topline">
-              <span>{payment.notes || payment.method}</span>
-              <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>
-                {payment.status}
-              </span>
-            </div>
-            <h3>₹{payment.amount}</h3>
-            <div className="card-meta">
-              <span>{formatDate(payment.paidAt)}</span>
-            </div>
-          </article>
-        ))
+        .map((payment) => {
+          // Extract course/material name from notes
+          let title = "Payment";
+          if (payment.notes) {
+            const match = payment.notes.match(/(?:course|material):\s*([^N]+?)(?:\s+Name:|$)/i);
+            if (match) {
+              title = match[1].trim();
+            }
+          }
+
+          return (
+            <article className="card" key={payment._id} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              {/* Header with amount and status */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "11px", color: "#999", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Payment Confirmed
+                  </p>
+                  <h3 style={{ margin: 0, fontSize: "26px", fontWeight: "700", color: "#22c55e" }}>
+                    ₹{payment.amount?.toLocaleString()}
+                  </h3>
+                </div>
+                <span style={{
+                  padding: "6px 14px",
+                  backgroundColor: "#dcfce7",
+                  color: "#166534",
+                  borderRadius: "20px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  whiteSpace: "nowrap"
+                }}>
+                  ✓ {payment.status}
+                </span>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: "1px", backgroundColor: "#e5e7eb", margin: "12px 0" }} />
+
+              {/* Details */}
+              <div style={{ display: "grid", gap: "10px" }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>ITEM</p>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333", fontWeight: "500" }}>
+                    {title}
+                  </p>
+                </div>
+                
+                <div>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>PAID ON</p>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>
+                    {formatDate(payment.paidAt)}
+                  </p>
+                </div>
+
+                {payment.method && (
+                  <div>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>METHOD</p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>
+                      {payment.method}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </article>
+          );
+        })
     ) : (
-      <article className="card">No payment history available yet.</article>
+      <article className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
+        <p style={{ margin: 0, color: "#999", fontSize: "16px" }}>📭 No payment history yet</p>
+      </article>
     )}
   </div>
 )}
 
 {selectedTab === "due" && (
-  <div className="card-grid">
+  <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
     {payments.filter(p => p.status !== "Paid").length ? (
       payments
         .filter((p) => p.status !== "Paid")
-        .map((payment) => (
-          <article className="card" key={payment._id}>
-            <div className="card-topline">
-              <span>{payment.notes || payment.method}</span>
-              <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>
-                {payment.status}
-              </span>
-            </div>
-            <h3>₹{payment.amount}</h3>
-            <div className="card-meta">
-              <span>Due: {formatDate(payment.dueDate)}</span>
-            </div>
+        .map((payment) => {
+          // Extract item name from notes
+          let itemName = "Payment Request";
+          if (payment.notes) {
+            const match = payment.notes.match(/(?:course|material|fee):\s*([^N]+?)(?:\s+Name:|$)/i);
+            if (match) {
+              itemName = match[1].trim();
+            } else if (payment.notes.includes("Monthly")) {
+              itemName = "Monthly coaching fee";
+            } else if (payment.notes.includes("Quarterly")) {
+              itemName = "Quarterly fee";
+            } else {
+              itemName = payment.notes.substring(0, 50);
+            }
+          }
 
-            {/* 🔥 Pay Now */}
-            <button
-              onClick={() =>
-                navigate("/course-payment", {
-                  state: {
-                    amount: payment.amount,
-                    paymentId: payment._id,
-                  },
-                })
-              }
-              className="pay-btn"
-            >
-              Pay Now
-            </button>
-          </article>
-        ))
+          return (
+            <article className="card" key={payment._id} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              {/* Header with amount and status */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                  <div>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "11px", color: "#999", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      Payment Pending
+                    </p>
+                    <h3 style={{ margin: 0, fontSize: "26px", fontWeight: "700", color: "#ff9800" }}>
+                      ₹{payment.amount?.toLocaleString()}
+                    </h3>
+                  </div>
+                  <span style={{
+                    padding: "6px 14px",
+                    backgroundColor: "#fff3cd",
+                    color: "#856404",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    whiteSpace: "nowrap"
+                  }}>
+                    ⏳ {payment.status}
+                  </span>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: "1px", backgroundColor: "#e5e7eb", margin: "12px 0" }} />
+
+                {/* Details */}
+                <div style={{ display: "grid", gap: "10px", marginTop: "12px" }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>ITEM</p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333", fontWeight: "500" }}>
+                      {itemName}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>DUE DATE</p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>
+                      {formatDate(payment.dueDate)}
+                    </p>
+                  </div>
+
+                  {payment.method && (
+                    <div>
+                      <p style={{ margin: 0, fontSize: "12px", color: "#999", fontWeight: "600" }}>METHOD</p>
+                      <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>
+                        {payment.method}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Pay Now Button */}
+              <button
+                onClick={() =>
+                  navigate(`/fees/${payment._id}/payment`, {
+                    state: {
+                      payment: payment,
+                    },
+                  })
+                }
+                style={{
+                  marginTop: "16px",
+                  padding: "10px 16px",
+                  backgroundColor: "#0066cc",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  transition: "background-color 0.2s"
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = "#0052a3"}
+                onMouseOut={(e) => e.target.style.backgroundColor = "#0066cc"}
+              >
+                Pay Now
+              </button>
+            </article>
+          );
+        })
     ) : (
-      <article className="card">No pending payments 🎉</article>
+      <article className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
+        <p style={{ margin: 0, color: "#999", fontSize: "16px" }}>🎉 No pending payments</p>
+      </article>
     )}
   </div>
 )}
@@ -265,89 +455,109 @@ const formatDate = (date) => {
       {selectedTab === "fees" && (
         <div>
           {fees.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#999", padding: "32px" }}>
-              You don't have any fees yet.
-            </p>
+            <div style={{
+              textAlign: "center",
+              color: "#999",
+              padding: "60px 32px",
+              backgroundColor: "#f9f9f9",
+              borderRadius: "12px",
+              border: "2px dashed #e0e0e0"
+            }}>
+              <p style={{ fontSize: "18px", margin: 0 }}>📚 You don't have any fees yet.</p>
+            </div>
           ) : (
             <div style={{ display: "grid", gap: "16px" }}>
               {fees.map((fee) => (
                 <div
                   key={fee._id}
                   style={{
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "12px",
                     overflow: "hidden",
                     backgroundColor: "#fff",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer"
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.1)"}
+                  onMouseLeave={(e) => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)"}
                 >
                   <div
                     onClick={() =>
                       setExpandedFee(expandedFee === fee._id ? null : fee._id)
                     }
                     style={{
-                      padding: "16px",
+                      padding: "20px 24px",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      backgroundColor: "#f9f9f9",
+                      backgroundColor: "#f8f9ff",
                       cursor: "pointer",
                     }}
                   >
                     <div>
-                      <h4 style={{ margin: "0 0 4px 0" }}>
+                      <h4 style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: "600", color: "#1f2937" }}>
                         {fee.course?.title || "Course"}
                       </h4>
-                      <p style={{ margin: "0", fontSize: "14px", color: "#666" }}>
-                        ₹{fee.totalAmount?.toLocaleString()} •{" "}
+                      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#0066cc" }}>
+                          ₹{fee.totalAmount?.toLocaleString()}
+                        </span>
                         <span
                           style={{
                             display: "inline-block",
-                            padding: "2px 8px",
+                            padding: "4px 12px",
                             backgroundColor: getStatusColor(fee.status),
                             color: "white",
-                            borderRadius: "12px",
+                            borderRadius: "20px",
                             fontSize: "12px",
-                            fontWeight: "500",
+                            fontWeight: "600",
                           }}
                         >
                           {fee.status}
                         </span>
-                      </p>
+                      </div>
                     </div>
-                    <span style={{ fontSize: "20px" }}>
+                    <span style={{ fontSize: "20px", color: "#666" }}>
                       {expandedFee === fee._id ? "▼" : "▶"}
                     </span>
                   </div>
 
                   {/* Expanded View */}
                   {expandedFee === fee._id && (
-                    <div style={{ padding: "16px", borderTop: "1px solid #ddd" }}>
+                    <div style={{ padding: "24px", borderTop: "1px solid #e0e0e0" }}>
                       <div
                         style={{
-                          marginBottom: "16px",
-                          padding: "12px",
-                          backgroundColor: "#f5f5f5",
-                          borderRadius: "4px",
+                          marginBottom: "20px",
+                          padding: "16px",
+                          backgroundColor: "#f0fdf4",
+                          borderRadius: "8px",
+                          border: "1px solid #dcfce7"
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span>Paid:</span>
-                          <strong>₹{fee.paidAmount?.toLocaleString() || 0}</strong>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                          <span style={{ color: "#666", fontSize: "14px" }}>Paid:</span>
+                          <strong style={{ color: "#22c55e", fontSize: "15px" }}>₹{fee.paidAmount?.toLocaleString() || 0}</strong>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span>Total:</span>
-                          <strong>₹{fee.totalAmount?.toLocaleString()}</strong>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                          <span style={{ color: "#666", fontSize: "14px" }}>Total:</span>
+                          <strong style={{ color: "#1f2937", fontSize: "15px" }}>₹{fee.totalAmount?.toLocaleString()}</strong>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span>Remaining:</span>
-                          <strong style={{ color: "#ff6b6b" }}>
+                        <div style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          paddingTop: "12px",
+                          borderTop: "1px solid rgba(220, 252, 231, 0.5)"
+                        }}>
+                          <span style={{ color: "#666", fontSize: "14px", fontWeight: "600" }}>Remaining:</span>
+                          <strong style={{ color: "#ef4444", fontSize: "15px" }}>
                             ₹{(fee.totalAmount - fee.paidAmount)?.toLocaleString()}
                           </strong>
                         </div>
                       </div>
 
-                      <h5 style={{ marginBottom: "12px" }}>Installments:</h5>
-                      <div style={{ display: "grid", gap: "8px" }}>
+                      <h5 style={{ marginBottom: "16px", fontSize: "14px", fontWeight: "600", color: "#1f2937" }}>📅 Installments:</h5>
+                      <div style={{ display: "grid", gap: "12px" }}>
                         {fee.installments &&
                           fee.installments.map((inst, idx) => (
                             <div
@@ -440,43 +650,77 @@ const formatDate = (date) => {
             </p>
           ) : (
             <div style={{ display: "grid", gap: "16px" }}>
-              {receipts.map((receipt) => (
-                <div
-                  key={receipt._id}
-                  style={{
-                    padding: "16px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <h4 style={{ margin: "0 0 4px 0" }}>Receipt #{receipt.receiptNumber}</h4>
-                    <p style={{ margin: "0", fontSize: "14px", color: "#666" }}>
-                      ₹{receipt.amount?.toLocaleString()} • {receipt.paymentMethod || "N/A"} •{" "}
-                      {new Date(receipt.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      // TODO: Implement PDF download
-                      alert("PDF download coming soon!");
-                    }}
+              {receipts.map((receipt) => {
+                // Determine what the payment was for
+                let description = receipt.description || "Payment";
+                if (receipt.studentFee?.course) {
+                  description = `${receipt.studentFee.course.title} - Installment ${receipt.installmentNumber}`;
+                } else if (receipt.payment?.notes) {
+                  // Extract the fee name from payment notes
+                  const match = receipt.payment.notes.match(/(?:Monthly|Quarterly|fee):\s*([^N]+?)(?:\s+Name:|Submitted|$)/i);
+                  if (match) {
+                    description = match[1].trim();
+                  } else {
+                    description = receipt.payment.notes.substring(0, 50);
+                  }
+                }
+
+                return (
+                  <div
+                    key={receipt._id}
                     style={{
-                      padding: "8px 16px",
-                      backgroundColor: "#f5f5f5",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontWeight: "500",
+                      padding: "20px",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      backgroundColor: "#f9f9f9",
+                      transition: "all 0.3s ease"
                     }}
                   >
-                    Download PDF
-                  </button>
-                </div>
-              ))}
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ margin: "0 0 4px 0", fontSize: "16px", fontWeight: "600", color: "#222" }}>
+                        {description}
+                      </h4>
+                      <p style={{ margin: "0", fontSize: "13px", color: "#666" }}>
+                        <strong>Receipt #{receipt.receiptNumber}</strong> • ₹{receipt.amount?.toLocaleString()} • 
+                        <span style={{ color: "#666", marginLeft: "4px" }}>{receipt.paymentMethod || "N/A"}</span>
+                      </p>
+                      <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#999" }}>
+                        {new Date(receipt.createdAt).toLocaleDateString("en-IN", { 
+                          weekday: "short", 
+                          year: "numeric", 
+                          month: "short", 
+                          day: "numeric" 
+                        })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        // TODO: Implement PDF download
+                        alert("PDF download coming soon!");
+                      }}
+                      style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#0066cc",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        transition: "background-color 0.2s",
+                        whiteSpace: "nowrap"
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = "#0052a3"}
+                      onMouseOut={(e) => e.target.style.backgroundColor = "#0066cc"}
+                    >
+                      Download
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

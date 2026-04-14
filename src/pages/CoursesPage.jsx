@@ -58,6 +58,31 @@ export default function CoursesPage() {
     };
 
     loadContent();
+
+    // Auto-refresh payment status every 8 seconds
+    const interval = setInterval(async () => {
+      if (token) {
+        try {
+          const paymentsResponse = await fetch(`${API_BASE}/dashboard/payments`, { headers: { Authorization: `Bearer ${token}` } });
+          setPayments(await paymentsResponse.json());
+        } catch (error) {
+          console.error("Failed to refresh payments:", error);
+        }
+      }
+    }, 8000);
+
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadContent();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [token]);
 
   const handlePurchase = async (type, id, title) => {

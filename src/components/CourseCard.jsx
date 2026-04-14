@@ -5,7 +5,7 @@ export default function CourseCard({ course, actionLabel, onAction, actionDisabl
         {course.category ? <span className="course-subject">{course.category}</span> : <span />}
         <strong>{course.duration}</strong>
       </div>
-      {course.title ? <h3>{course.title}</h3> : null}
+     
       <div className="card-body">
         <p>{course.summary}</p>
       </div>

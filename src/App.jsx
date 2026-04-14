@@ -10,6 +10,7 @@ import ContactPage from "./pages/ContactPage";
 import Spinner from "./components/Spinner";
 import CoursePaymentPage from "./pages/CoursePaymentPage";
 import MaterialPaymentPage from "./pages/MaterialPaymentPage";
+import FeePaymentPage from "./pages/FeePaymentPage";
 import CoursesPage from "./pages/CoursesPage";
 import GalleryPage from "./pages/GalleryPage";
 import HomePage from "./pages/HomePage";
@@ -133,6 +134,14 @@ export default function App() {
           element={
             <ProtectedRoute studentOnly>
               <StudentFeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fees/:paymentId/payment"
+          element={
+            <ProtectedRoute studentOnly>
+              <FeePaymentPage />
             </ProtectedRoute>
           }
         />

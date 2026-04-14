@@ -57,7 +57,8 @@ const navItems = [
   { key: "students", label: "Students" },
   { key: "courses", label: "Courses" },
   { key: "materials", label: "Study materials" },
-   { key: "notifications", label: "Notifications" },
+  { key: "enrollments", label: "Enrollments" },
+  { key: "notifications", label: "Notifications" },
   { key: "payments", label: "Payments" },
   { key: "doubts", label: "Doubt Sessions" },
   { key: "completed-doubts", label: "Completed Doubts" },
@@ -102,6 +103,8 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState("students");
   const [summary, setSummary] = useState(null);
   const [students, setStudents] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [pendingEnrollmentCount, setPendingEnrollmentCount] = useState(0);
   const [allDoubts, setAllDoubts] = useState([]);
   const [completedDoubts, setCompletedDoubts] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -112,6 +115,10 @@ export default function AdminPage() {
   const [editingMaterialId, setEditingMaterialId] = useState(null);
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
+  const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+  const [selectedEnrollment, setSelectedEnrollment] = useState(null);
+  const [enrollmentView, setEnrollmentView] = useState("pending");
+  const [enrollmentHistory, setEnrollmentHistory] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentSearch, setStudentSearch] = useState("");
   const [paymentReminder, setPaymentReminder] = useState({ amount: "", dueDate: "", notes: "" });
@@ -119,6 +126,7 @@ export default function AdminPage() {
   const navCounts = {
     payments: summary?.pendingPayments ?? 0,
     doubts: summary?.pendingDoubts ?? 0,
+    enrollments: pendingEnrollmentCount,
   };
   const [courseForm, setCourseForm] = useState(initialCourseForm);
   const [materialForm, setMaterialForm] = useState(initialMaterialForm);
@@ -126,12 +134,14 @@ export default function AdminPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sectionLoading, setSectionLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [sectionLoaded, setSectionLoaded] = useState({
     payments: false,
     doubts: false,
     "completed-doubts": false,
     courses: false,
     materials: false,
+    enrollments: false,
   });
 
   const totalVisiblePayments = payments
@@ -211,6 +221,138 @@ export default function AdminPage() {
     setSectionLoaded((prev) => ({ ...prev, materials: true }));
   };
 
+  const loadPendingEnrollmentCount = async () => {
+    try {
+      const response = await fetch("/api/enrollments/pending/count", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPendingEnrollmentCount(data.pendingCount);
+      }
+    } catch (error) {
+      console.error("Error loading pending enrollments count:", error);
+    }
+  };
+
+  const loadEnrollments = async () => {
+    try {
+      const response = await fetch("/api/enrollments?status=Pending&limit=100", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEnrollments(data.enrollmentRequests);
+        setSectionLoaded((prev) => ({ ...prev, enrollments: true }));
+      }
+    } catch (error) {
+      console.error("Error loading enrollments:", error);
+    }
+  };
+
+  const loadEnrollmentHistory = async () => {
+    try {
+      const response = await fetch("/api/enrollments?status=All&limit=100", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        const historyEnrollments = data.enrollmentRequests.filter(
+          (e) => e.status === "Accepted" || e.status === "Rejected"
+        );
+        setEnrollmentHistory(historyEnrollments);
+      }
+    } catch (error) {
+      console.error("Error loading enrollment history:", error);
+    }
+  };
+
+  const handleApproveEnrollment = async (enrollment) => {
+    if (!window.confirm(`Approve enrollment for ${enrollment.studentName}?`)) {
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      const response = await fetch(
+        `/api/enrollments/${enrollment._id}/approve`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ adminNotes: "" }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        loadEnrollments();
+        setStatusMessage("Enrollment approved successfully");
+        setTimeout(() => setStatusMessage(""), 3000);
+      } else {
+        alert(data.message || "Failed to approve enrollment");
+      }
+    } catch (error) {
+      console.error("Error approving enrollment:", error);
+      alert("Error approving enrollment");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectEnrollment = async (enrollment) => {
+    if (!window.confirm(`Reject enrollment for ${enrollment.studentName}?`)) {
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      const response = await fetch(
+        `/api/enrollments/${enrollment._id}/reject`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ adminNotes: "" }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        loadEnrollments();
+        setStatusMessage("Enrollment rejected successfully");
+        setTimeout(() => setStatusMessage(""), 3000);
+      } else {
+        alert(data.message || "Failed to reject enrollment");
+      }
+    } catch (error) {
+      console.error("Error rejecting enrollment:", error);
+      alert("Error rejecting enrollment");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleViewEnrollment = (enrollment) => {
+    setSelectedEnrollment(enrollment);
+    setIsEnrollmentModalOpen(true);
+  };
+
+  const handleCloseEnrollmentModal = () => {
+    setIsEnrollmentModalOpen(false);
+    setSelectedEnrollment(null);
+  };
+
   const loadSectionData = async (section) => {
     if (section === "payments") {
       if (sectionLoaded.payments) return;
@@ -245,6 +387,13 @@ export default function AdminPage() {
       return;
     }
 
+    if (section === "enrollments") {
+      if (!sectionLoaded.enrollments) {
+        await loadEnrollments();
+      }
+      return;
+    }
+
     if (section === "students") {
       await loadStudents(studentSearch);
     }
@@ -256,7 +405,7 @@ export default function AdminPage() {
     const initialLoad = async () => {
       setLoading(true);
       try {
-        await Promise.all([loadSummary(), loadStudents()]);
+        await Promise.all([loadSummary(), loadStudents(), loadPendingEnrollmentCount()]);
       } catch (error) {
         setStatusMessage(error.message);
       } finally {
@@ -1159,9 +1308,247 @@ export default function AdminPage() {
             </article>
           ) : null}
 
+          {!loading && activeSection === "enrollments" ? (
+            <article className="card admin-section-card">
+              <div className="section-heading">
+                <span className="pill">Enrollment Requests</span>
+                <h2>Manage enrollment requests</h2>
+                <p>Review and approve pending enrollment requests from new students.</p>
+              </div>
+              <div style={{ marginTop: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
+                <button 
+                  className="ghost-button" 
+                  onClick={() => handleSectionChange("enrollments")}
+                  style={{ marginBottom: "0px" }}
+                >
+                  ↻ Refresh Enrollments
+                </button>
+                <div style={{ display: "flex", gap: "10px", marginLeft: "20px" }}>
+                  <button 
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: enrollmentView === "pending" ? "#007bff" : "#e0e0e0",
+                      color: enrollmentView === "pending" ? "white" : "#333",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "14px"
+                    }}
+                    onClick={() => setEnrollmentView("pending")}
+                  >
+                    Pending
+                  </button>
+                  <button 
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: enrollmentView === "history" ? "#007bff" : "#e0e0e0",
+                      color: enrollmentView === "history" ? "white" : "#333",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "14px"
+                    }}
+                    onClick={() => {
+                      setEnrollmentView("history");
+                      loadEnrollmentHistory();
+                    }}
+                  >
+                    History
+                  </button>
+                </div>
+              </div>
+              {sectionLoading ? (
+                <Spinner message={enrollmentView === "pending" ? "Loading pending enrollments..." : "Loading enrollment history..."} />
+              ) : (enrollmentView === "pending" ? enrollments : enrollmentHistory).length > 0 ? (
+                <div className="table-wrapper" style={{ marginTop: 16 }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Class</th>
+                        <th>School</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(enrollmentView === "pending" ? enrollments : enrollmentHistory).map((enrollment) => (
+                        <tr key={enrollment._id}>
+                          <td>{enrollment.studentName}</td>
+                          <td>{enrollment.email}</td>
+                          <td>{enrollment.phone}</td>
+                          <td>{enrollment.studentClass}</td>
+                          <td>{enrollment.schoolName || "-"}</td>
+                          <td>
+                            <span className={`status-badge ${getStatusBadgeClass(enrollment.status)}`}>
+                              {enrollment.status}
+                            </span>
+                          </td>
+                          <td>{formatDate(enrollment.createdAt)}</td>
+                          <td>
+                            <div className="table-actions">
+                              <button 
+                                className="ghost-button" 
+                                onClick={() => handleViewEnrollment(enrollment)}
+                                style={{ fontSize: "12px", color: "blue" }}
+                                title="View enrollment details"
+                              >
+                                👁 View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <article className="card">
+                  {enrollmentView === "pending" ? "No pending enrollment requests found." : "No enrollment history found."}
+                </article>
+              )}
+            </article>
+          ) : null}
+
           {statusMessage ? <p style={{ marginTop: 16, color: "var(--text)" }}>{statusMessage}</p> : null}
         </section>
       </div>
+
+      {isEnrollmentModalOpen && selectedEnrollment ? (
+        <div className="admin-modal-overlay" role="dialog" aria-modal="true" onClick={handleCloseEnrollmentModal}>
+          <article className="card admin-section-card admin-modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-modal-header">
+              <div className="section-heading">
+                <span className="pill">Enrollment Details</span>
+                <h2>{selectedEnrollment.studentName}</h2>
+              </div>
+              <button className="ghost-button" type="button" onClick={handleCloseEnrollmentModal}>
+                Close
+              </button>
+            </div>
+            <div className="admin-payment-form" style={{ padding: "20px" }}>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
+              }}>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Student Name:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.studentName}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Email:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.email}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Phone:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.phone}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Class:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.studentClass}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Parent/Guardian Name:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.parentsName}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Parent's Phone:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.parentsPhone}</p>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Address:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.address}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Status:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>
+                    <span className={`status-badge ${getStatusBadgeClass(selectedEnrollment.status)}`}>
+                      {selectedEnrollment.status}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "600", color: "#666" }}>Submitted On:</label>
+                  <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{formatDateTime(selectedEnrollment.createdAt)}</p>
+                </div>
+                {selectedEnrollment.adminNotes && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ fontWeight: "600", color: "#666" }}>Admin Notes:</label>
+                    <p style={{ margin: "5px 0 15px 0", fontSize: "15px" }}>{selectedEnrollment.adminNotes}</p>
+                  </div>
+                )}
+              </div>
+              <div style={{
+                marginTop: "30px",
+                display: "flex",
+                gap: "15px",
+                justifyContent: "flex-end",
+                borderTop: "1px solid #e0e0e0",
+                paddingTop: "20px"
+              }}>
+                <button 
+                  className="ghost-button" 
+                  onClick={handleCloseEnrollmentModal}
+                  style={{ 
+                    padding: "10px 20px",
+                    backgroundColor: "#6c757d",
+                    color: "white",
+                    borderRadius: "6px"
+                  }}
+                >
+                  Close
+                </button>
+                {selectedEnrollment.status === "Pending" && enrollmentView === "pending" && (
+                  <>
+                    <button 
+                      className="ghost-button" 
+                      onClick={() => {
+                        handleRejectEnrollment(selectedEnrollment);
+                        handleCloseEnrollmentModal();
+                      }}
+                      disabled={actionLoading}
+                      style={{ 
+                        padding: "10px 20px",
+                        backgroundColor: "#dc3545",
+                        color: "white",
+                        borderRadius: "6px",
+                        cursor: actionLoading ? "not-allowed" : "pointer"
+                      }}
+                      title="Reject enrollment"
+                    >
+                      ✕ Reject
+                    </button>
+                    <button 
+                      className="ghost-button" 
+                      onClick={() => {
+                        handleApproveEnrollment(selectedEnrollment);
+                        handleCloseEnrollmentModal();
+                      }}
+                      disabled={actionLoading}
+                      style={{ 
+                        padding: "10px 20px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        borderRadius: "6px",
+                        cursor: actionLoading ? "not-allowed" : "pointer"
+                      }}
+                      title="Approve enrollment"
+                    >
+                      ✓ Approve
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </article>
+        </div>
+      ) : null}
 
       {isCourseModalOpen ? (
         <div className="admin-modal-overlay" role="dialog" aria-modal="true" onClick={handleCloseCourseModal}>
