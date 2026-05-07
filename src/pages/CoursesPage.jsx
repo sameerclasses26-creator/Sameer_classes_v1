@@ -3,9 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { API_BASE } from "../api";
 import CourseCard from "../components/CourseCard";
+import CompleteClassCard from "../components/CompleteClassCard";
 import SectionHeading from "../components/SectionHeading";
 import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
+import PaymentOptionModal from "../components/PaymentOptionModal";
 
 export default function CoursesPage() {
   const { token } = useAuth();
@@ -16,8 +18,10 @@ export default function CoursesPage() {
   const [materials, setMaterials] = useState([]);
   const [payments, setPayments] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
+  const [studentFees, setStudentFees] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedCourseForPayment, setSelectedCourseForPayment] = useState(null);
 
   useEffect(() => {
     if (location.state?.paymentMessage) {
@@ -43,15 +47,18 @@ export default function CoursesPage() {
 
       if (token) {
         try {
-          const [paymentsResponse, enrollmentsResponse] = await Promise.all([
+          const [paymentsResponse, enrollmentsResponse, feesResponse] = await Promise.all([
             fetch(`${API_BASE}/dashboard/payments`, { headers: { Authorization: `Bearer ${token}` } }),
             fetch(`${API_BASE}/dashboard/enrollments`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API_BASE}/fees`, { headers: { Authorization: `Bearer ${token}` } }),
           ]);
           setPayments(await paymentsResponse.json());
           setEnrollments(await enrollmentsResponse.json());
+          setStudentFees(await feesResponse.json());
         } catch {
           setPayments([]);
           setEnrollments([]);
+          setStudentFees([]);
         }
       }
       setLoading(false);
@@ -59,17 +66,23 @@ export default function CoursesPage() {
 
     loadContent();
 
-    // Auto-refresh payment status every 8 seconds
+    // Auto-refresh payment, enrollment, and fees status every 10 minutes
     const interval = setInterval(async () => {
       if (token) {
         try {
-          const paymentsResponse = await fetch(`${API_BASE}/dashboard/payments`, { headers: { Authorization: `Bearer ${token}` } });
+          const [paymentsResponse, enrollmentsResponse, feesResponse] = await Promise.all([
+            fetch(`${API_BASE}/dashboard/payments`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API_BASE}/dashboard/enrollments`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API_BASE}/fees`, { headers: { Authorization: `Bearer ${token}` } }),
+          ]);
           setPayments(await paymentsResponse.json());
+          setEnrollments(await enrollmentsResponse.json());
+          setStudentFees(await feesResponse.json());
         } catch (error) {
-          console.error("Failed to refresh payments:", error);
+          console.error("Failed to refresh data:", error);
         }
       }
-    }, 8000);
+    }, 600000);
 
     // Refresh when page becomes visible
     const handleVisibilityChange = () => {
@@ -132,7 +145,17 @@ export default function CoursesPage() {
 
     const payment = getReferenceStatus(course, "Course");
     if (payment) {
-      return { label: payment.status === "Paid" ? "Payment completed" : "Payment in progress", disabled: payment.status !== "Paid", status: payment.status };
+      if (payment.status === "Paid") {
+        return { label: "Visit course", disabled: false, type: "view", status: payment.status };
+      }
+      return { label: "Payment in progress", disabled: true, status: payment.status };
+    }
+
+    const studentFee = studentFees.find(
+      (fee) => String(fee.course?._id || fee.course) === String(course._id)
+    );
+    if (studentFee) {
+      return { label: "Manage EMI", disabled: false, type: "fees" };
     }
 
     return { label: "Buy", disabled: false, type: "buy" };
@@ -210,8 +233,61 @@ export default function CoursesPage() {
     return {
       ...course,
       category: subjectName,
-      title: "",
     };
+  };
+
+  const getMaterialCardData = (material) => {
+    return {
+      category: material.category,
+      duration: material.course || "Study pack",
+      title: material.title,
+      summary: material.description,
+      mode: "Study material",
+      price: material.price,
+    };
+  };
+
+  const isCompleteClass = (course) => {
+    return /complete/i.test(course.title) && /\b(8|9|10)\b/.test(course.title);
+  };
+
+  const handleCourseAction = (course, status) => {
+    if (status.type === "view") {
+      navigate(`/courses/${course._id}/content`);
+      return;
+    }
+
+    if (status.type === "fees") {
+      navigate("/fees");
+      return;
+    }
+
+    if (status.type === "buy") {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+      setSelectedCourseForPayment(course);
+    }
+  };
+
+  const handleMaterialAction = (material, status) => {
+    if (status.type === "view") {
+      if (material.downloadUrl) {
+        window.open(material.downloadUrl, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
+
+    if (status.type === "buy") {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+      navigate(`/materials/${material._id}/payment`, {
+        state: { material },
+      });
+    }
   };
 
   const groupedCourses = groupItemsByClass(courses);
@@ -246,27 +322,19 @@ export default function CoursesPage() {
               <div className="card-grid">
                 {groupItems.map((course) => {
                   const status = getCourseStatus(course);
-                  return (
-                    <CourseCard
-                      key={course._id}
-                      course={getCourseCardData(course, groupName)}
-                      actionLabel={status.label}
-                      actionDisabled={status.disabled}
-                      onAction={() => {
-                        if (status.type === "view") {
-                          navigate("/dashboard");
-                        } else if (status.type === "buy") {
-                          if (!token) {
-                            navigate("/login");
-                            return;
-                          }
-                          navigate(`/courses/${course._id}/payment`, {
-                            state: { course },
-                          });
-                        }
-                      }}
-                    />
-                  );
+                  const courseCardData = getCourseCardData(course, groupName);
+                  const cardProps = {
+                    course: courseCardData,
+                    actionLabel: status.label,
+                    actionDisabled: status.disabled,
+                    onAction: () => handleCourseAction(course, status),
+                  };
+
+                  if (isCompleteClass(course)) {
+                    return <CompleteClassCard key={course._id} {...cardProps} />;
+                  }
+
+                  return <CourseCard key={course._id} {...cardProps} />;
                 })}
               </div>
             </div>
@@ -282,32 +350,19 @@ export default function CoursesPage() {
               <div className="card-grid">
                 {groupItems.map((material) => {
                   const status = getMaterialStatus(material);
-                  return (
-                    <CourseCard
-                      key={material._id}
-                      course={{
-                        category: material.category,
-                        duration: material.course || "Study pack",
-                        title: material.title,
-                        summary: material.description,
-                        mode: "Study material",
-                        price: material.price,
-                      }}
-                      actionLabel={status.label}
-                      actionDisabled={status.disabled}
-                      onAction={() => {
-                        if (status.type === "buy") {
-                          if (!token) {
-                            navigate("/login");
-                            return;
-                          }
-                          navigate(`/materials/${material._id}/payment`, {
-                            state: { material },
-                          });
-                        }
-                      }}
-                    />
-                  );
+                  const materialCardData = getMaterialCardData(material);
+                  const cardProps = {
+                    course: materialCardData,
+                    actionLabel: status.label,
+                    actionDisabled: status.disabled,
+                    onAction: () => handleMaterialAction(material, status),
+                  };
+
+                  if (isCompleteClass(material)) {
+                    return <CompleteClassCard key={material._id} {...cardProps} />;
+                  }
+
+                  return <CourseCard key={material._id} {...cardProps} />;
                 })}
               </div>
             </div>
@@ -315,6 +370,13 @@ export default function CoursesPage() {
         ) : (
           <article className="card">No study materials available.</article>
         )
+      )}
+
+      {selectedCourseForPayment && (
+        <PaymentOptionModal
+          course={selectedCourseForPayment}
+          onClose={() => setSelectedCourseForPayment(null)}
+        />
       )}
     </div>
   );

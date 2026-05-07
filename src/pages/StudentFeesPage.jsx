@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE } from "../api";
 import { useAuth } from "../context/AuthContext";
 import Spinner from "../components/Spinner";
@@ -7,12 +7,22 @@ import Spinner from "../components/Spinner";
 export default function StudentFeesPage() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [fees, setFees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedFee, setExpandedFee] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [selectedTab, setSelectedTab] = useState("fees");
   const [payments, setPayments] = useState([]);
+  const [pageMessage, setPageMessage] = useState(location.state?.message || "");
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+
+useEffect(() => {
+  if (!location.state?.message) return;
+
+  setPageMessage(location.state.message);
+  navigate(location.pathname, { replace: true, state: {} });
+}, [location.pathname, location.state, navigate]);
 
 useEffect(() => {
   if (!token) {
@@ -88,6 +98,22 @@ useEffect(() => {
     return colors[status] || "#999";
   };
 
+  // Open the printable receipt and trigger the browser's Save as PDF flow.
+  const generateReceiptPDF = (receipt) => {
+    openReceiptWindow(receipt, true);
+  };
+
+  // Check if there's a pending payment request for this installment
+  const hasPendingPaymentRequest = (feeId, installmentNumber) => {
+    return payments.some(
+      (payment) =>
+        payment.referenceModel === "StudentFee" &&
+        String(payment.reference) === String(feeId) &&
+        payment.installmentNumber === installmentNumber &&
+        payment.status === "Pending"
+    );
+  };
+
   const getStatusBadgeClass = (status) => {
   switch (status) {
     case "Paid":
@@ -101,9 +127,286 @@ useEffect(() => {
   }
 };
 
+const handleCancelEMI = async (feeId, courseTitle) => {
+  const confirmCancel = window.confirm(
+    `Are you sure you want to cancel the EMI for "${courseTitle}"?\n\nThis will remove the course from your account and you can enroll again later to purchase it.`
+  );
+
+  if (!confirmCancel) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/fees/${feeId}/cancel`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to cancel EMI");
+    }
+
+    const data = await response.json();
+
+    // Show success message
+    setPageMessage(data.message || "EMI cancelled successfully!");
+
+    // Refresh the fees list
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+    console.error("Cancel EMI error:", error);
+  }
+};
+
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString();
 };
+
+  const getReceiptDescription = (receipt) => {
+    if (receipt.studentFee?.course?.title && receipt.installmentNumber) {
+      return `${receipt.studentFee.course.title} - Installment ${receipt.installmentNumber}`;
+    }
+
+    if (receipt.description && !receipt.description.includes("undefined")) {
+      return receipt.description;
+    }
+
+    if (receipt.payment?.notes) {
+      const match = receipt.payment.notes.match(/(?:Monthly|Quarterly|fee):\s*([^N]+?)(?:\s+Name:|Submitted|$)/i);
+      if (match) {
+        return match[1].trim();
+      }
+
+      return receipt.payment.notes.substring(0, 50);
+    }
+
+    return receipt.installmentNumber ? `Installment ${receipt.installmentNumber} Payment` : "Payment";
+  };
+
+  const getReceiptDetails = (receipt) => {
+    const description = getReceiptDescription(receipt);
+
+    return {
+      description,
+      receiptNumber: receipt.receiptNumber || "Pending",
+      amount: `₹${(receipt.amount || 0).toLocaleString("en-IN")}`,
+      paymentMethod: receipt.paymentMethod || receipt.payment?.method || "N/A",
+      issuedOn: new Date(receipt.createdAt).toLocaleDateString("en-IN", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+      issuedOnFull: new Date(receipt.createdAt).toLocaleString("en-IN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      studentName: user?.name || "Student",
+      studentEmail: user?.email || "N/A",
+      installmentLabel: receipt.installmentNumber ? `Installment ${receipt.installmentNumber}` : "Full Payment",
+      status: receipt.status || "Completed",
+      referenceId: receipt.referenceId || receipt.payment?._id || "N/A",
+    };
+  };
+
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const openReceiptWindow = (receipt, autoPrint = false) => {
+    const details = getReceiptDetails(receipt);
+    const receiptWindow = window.open("", "_blank", "width=900,height=700");
+
+    if (!receiptWindow) {
+      window.alert("Please allow pop-ups to view or download the receipt.");
+      return;
+    }
+
+    receiptWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${escapeHtml(details.receiptNumber)}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              padding: 32px;
+              font-family: Arial, sans-serif;
+              background: #f4f7fb;
+              color: #1f2937;
+            }
+            .receipt-shell {
+              max-width: 820px;
+              margin: 0 auto;
+              background: #ffffff;
+              border: 1px solid #dbe4f0;
+              border-radius: 18px;
+              overflow: hidden;
+              box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+            }
+            .receipt-header {
+              padding: 28px 32px;
+              background: linear-gradient(135deg, #0f4c81 0%, #1d70b8 100%);
+              color: #ffffff;
+            }
+            .receipt-header h1 {
+              margin: 0 0 8px;
+              font-size: 30px;
+            }
+            .receipt-header p {
+              margin: 0;
+              opacity: 0.9;
+              font-size: 15px;
+            }
+            .receipt-body {
+              padding: 28px 32px 32px;
+            }
+            .highlight {
+              display: grid;
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+              gap: 14px;
+              margin-bottom: 28px;
+            }
+            .highlight-card {
+              padding: 16px;
+              border-radius: 14px;
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+            }
+            .highlight-card span {
+              display: block;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              color: #64748b;
+              margin-bottom: 8px;
+            }
+            .highlight-card strong {
+              font-size: 18px;
+              color: #0f172a;
+            }
+            .detail-grid {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 14px;
+            }
+            .detail-item {
+              padding: 16px;
+              border: 1px solid #e2e8f0;
+              border-radius: 14px;
+              background: #ffffff;
+            }
+            .detail-item span {
+              display: block;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              color: #64748b;
+              margin-bottom: 8px;
+            }
+            .detail-item strong {
+              font-size: 16px;
+              color: #0f172a;
+              word-break: break-word;
+            }
+            .receipt-footer {
+              margin-top: 28px;
+              padding-top: 18px;
+              border-top: 1px dashed #cbd5e1;
+              color: #475569;
+              font-size: 14px;
+            }
+            @media print {
+              body {
+                background: #ffffff;
+                padding: 0;
+              }
+              .receipt-shell {
+                box-shadow: none;
+                border-radius: 0;
+                border: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-shell">
+            <div class="receipt-header">
+              <h1>Fee Payment Receipt</h1>
+              <p>${escapeHtml(details.description)}</p>
+            </div>
+            <div class="receipt-body">
+              <div class="highlight">
+                <div class="highlight-card">
+                  <span>Receipt Number</span>
+                  <strong>${escapeHtml(details.receiptNumber)}</strong>
+                </div>
+                <div class="highlight-card">
+                  <span>Amount Paid</span>
+                  <strong>${escapeHtml(details.amount)}</strong>
+                </div>
+                <div class="highlight-card">
+                  <span>Payment Method</span>
+                  <strong>${escapeHtml(details.paymentMethod)}</strong>
+                </div>
+              </div>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span>Student Name</span>
+                  <strong>${escapeHtml(details.studentName)}</strong>
+                </div>
+                <div class="detail-item">
+                  <span>Student Email</span>
+                  <strong>${escapeHtml(details.studentEmail)}</strong>
+                </div>
+                <div class="detail-item">
+                  <span>Payment For</span>
+                  <strong>${escapeHtml(details.description)}</strong>
+                </div>
+                <div class="detail-item">
+                  <span>Installment</span>
+                  <strong>${escapeHtml(details.installmentLabel)}</strong>
+                </div>
+                <div class="detail-item">
+                  <span>Status</span>
+                  <strong>${escapeHtml(details.status)}</strong>
+                </div>
+                <div class="detail-item">
+                  <span>Reference ID</span>
+                  <strong>${escapeHtml(details.referenceId)}</strong>
+                </div>
+                <div class="detail-item">
+                  <span>Issued On</span>
+                  <strong>${escapeHtml(details.issuedOnFull)}</strong>
+                </div>
+              </div>
+              <div class="receipt-footer">
+                This is a system-generated receipt for your coaching fee payment.
+              </div>
+            </div>
+          </div>
+          ${autoPrint ? "<script>window.onload = function () { window.print(); };</script>" : ""}
+        </body>
+      </html>
+    `);
+    receiptWindow.document.close();
+  };
 
   // Calculate totals including both fees and payments
   const feeTotal = fees.reduce((sum, fee) => sum + (fee.totalAmount || 0), 0);
@@ -130,6 +433,12 @@ const formatDate = (date) => {
 
   return (
     <div style={{ padding: "32px 20px", maxWidth: "1200px", margin: "0 auto" }}>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
       {/* Header Section */}
       <div style={{
         background: "linear-gradient(135deg, #0066cc 0%, #004d99 100%)",
@@ -142,6 +451,22 @@ const formatDate = (date) => {
         <h1 style={{ margin: "0 0 8px 0", fontSize: "32px", fontWeight: "700" }}>My Fees</h1>
         <p style={{ margin: 0, fontSize: "16px", opacity: "0.9" }}>Track your course fees and payment history</p>
       </div>
+
+      {pageMessage ? (
+        <div
+          style={{
+            marginBottom: "24px",
+            padding: "14px 18px",
+            borderRadius: "10px",
+            backgroundColor: "#ecfdf5",
+            border: "1px solid #a7f3d0",
+            color: "#065f46",
+            fontWeight: "600",
+          }}
+        >
+          {pageMessage}
+        </div>
+      ) : null}
 
       {/* Summary Cards */}
       <div
@@ -574,15 +899,16 @@ const formatDate = (date) => {
                                 borderRadius: "4px",
                                 display: "flex",
                                 justifyContent: "space-between",
+                                alignItems: "center",
                               }}
                             >
-                              <div>
+                              <div style={{ flex: 1 }}>
                                 <strong>Installment {inst.number}</strong>
                                 <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#666" }}>
                                   Due: {new Date(inst.dueDate).toLocaleDateString()}
                                 </p>
                               </div>
-                              <div style={{ textAlign: "right" }}>
+                              <div style={{ textAlign: "right", marginRight: "12px" }}>
                                 <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
                                   ₹{inst.amount?.toLocaleString()}
                                 </p>
@@ -601,12 +927,68 @@ const formatDate = (date) => {
                                   {inst.status}
                                 </span>
                               </div>
+                              {inst.status === "Pending" || inst.status === "Overdue" ? (
+                                hasPendingPaymentRequest(fee._id, inst.number) ? (
+                                  <div
+                                    style={{
+                                      padding: "6px 12px",
+                                      backgroundColor: "#3b82f6",
+                                      color: "white",
+                                      borderRadius: "4px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      whiteSpace: "nowrap",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: "inline-block",
+                                        width: "4px",
+                                        height: "4px",
+                                        backgroundColor: "white",
+                                        borderRadius: "50%",
+                                        animation: "pulse 1.5s ease-in-out infinite",
+                                      }}
+                                    ></span>
+                                    Payment Processing
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() =>
+                                      navigate("/installments/payment", {
+                                        state: {
+                                          feeId: fee._id,
+                                          installmentNumber: inst.number,
+                                          amount: inst.amount,
+                                          courseName: fee.course?.title,
+                                        },
+                                      })
+                                    }
+                                    style={{
+                                      padding: "6px 12px",
+                                      backgroundColor: "#059669",
+                                      color: "white",
+                                      border: "none",
+                                      borderRadius: "4px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      cursor: "pointer",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    Pay Now
+                                  </button>
+                                )
+                              ) : null}
                             </div>
                           ))}
                       </div>
 
                       {/* Pay Button */}
-                      {fee.status !== "Paid" && (
+                      {fee.status !== "Paid" && (!fee.installments || fee.installments.length === 0) && (
                         <button
                           onClick={() =>
                             navigate("/course-payment", {
@@ -632,6 +1014,30 @@ const formatDate = (date) => {
                           Pay Now
                         </button>
                       )}
+
+                      {/* Cancel EMI Button - Show only if no payment has been made yet */}
+                      {fee.status === "Pending" && fee.paidAmount === 0 && (
+                        <button
+                          onClick={() => handleCancelEMI(fee._id, fee.course?.title)}
+                          style={{
+                            marginTop: "12px",
+                            width: "100%",
+                            padding: "12px",
+                            backgroundColor: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            fontSize: "14px",
+                            transition: "background-color 0.2s"
+                          }}
+                          onMouseOver={(e) => e.target.style.backgroundColor = "#dc2626"}
+                          onMouseOut={(e) => e.target.style.backgroundColor = "#ef4444"}
+                        >
+                          ✕ Cancel EMI
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -651,19 +1057,7 @@ const formatDate = (date) => {
           ) : (
             <div style={{ display: "grid", gap: "16px" }}>
               {receipts.map((receipt) => {
-                // Determine what the payment was for
-                let description = receipt.description || "Payment";
-                if (receipt.studentFee?.course) {
-                  description = `${receipt.studentFee.course.title} - Installment ${receipt.installmentNumber}`;
-                } else if (receipt.payment?.notes) {
-                  // Extract the fee name from payment notes
-                  const match = receipt.payment.notes.match(/(?:Monthly|Quarterly|fee):\s*([^N]+?)(?:\s+Name:|Submitted|$)/i);
-                  if (match) {
-                    description = match[1].trim();
-                  } else {
-                    description = receipt.payment.notes.substring(0, 50);
-                  }
-                }
+                const receiptDetails = getReceiptDetails(receipt);
 
                 return (
                   <div
@@ -681,48 +1075,305 @@ const formatDate = (date) => {
                   >
                     <div style={{ flex: 1 }}>
                       <h4 style={{ margin: "0 0 4px 0", fontSize: "16px", fontWeight: "600", color: "#222" }}>
-                        {description}
+                        {receiptDetails.description}
                       </h4>
                       <p style={{ margin: "0", fontSize: "13px", color: "#666" }}>
-                        <strong>Receipt #{receipt.receiptNumber}</strong> • ₹{receipt.amount?.toLocaleString()} • 
-                        <span style={{ color: "#666", marginLeft: "4px" }}>{receipt.paymentMethod || "N/A"}</span>
+                        <strong>Receipt #{receiptDetails.receiptNumber}</strong> • {receiptDetails.amount} •
+                        <span style={{ color: "#666", marginLeft: "4px" }}>{receiptDetails.paymentMethod}</span>
                       </p>
                       <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#999" }}>
-                        {new Date(receipt.createdAt).toLocaleDateString("en-IN", { 
-                          weekday: "short", 
-                          year: "numeric", 
-                          month: "short", 
-                          day: "numeric" 
-                        })}
+                        {receiptDetails.issuedOn}
                       </p>
                     </div>
-                    <button
-                      onClick={() => {
-                        // TODO: Implement PDF download
-                        alert("PDF download coming soon!");
-                      }}
-                      style={{
-                        padding: "10px 20px",
-                        backgroundColor: "#0066cc",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                        transition: "background-color 0.2s",
-                        whiteSpace: "nowrap"
-                      }}
-                      onMouseOver={(e) => e.target.style.backgroundColor = "#0052a3"}
-                      onMouseOut={(e) => e.target.style.backgroundColor = "#0066cc"}
-                    >
-                      Download
-                    </button>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        onClick={() => setSelectedReceipt(receipt)}
+                        style={{
+                          padding: "10px 20px",
+                          backgroundColor: "#10b981",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                          transition: "background-color 0.2s",
+                          whiteSpace: "nowrap"
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = "#059669"}
+                        onMouseOut={(e) => e.target.style.backgroundColor = "#10b981"}
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => generateReceiptPDF(receipt)}
+                        style={{
+                          padding: "10px 20px",
+                          backgroundColor: "#0066cc",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                          transition: "background-color 0.2s",
+                          whiteSpace: "nowrap"
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = "#0052a3"}
+                        onMouseOut={(e) => e.target.style.backgroundColor = "#0066cc"}
+                      >
+                        ⬇️ Download PDF
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Receipt View Modal */}
+      {selectedReceipt && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000,
+          padding: "20px"
+        }}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            maxWidth: "600px",
+            width: "100%",
+            maxHeight: "90vh",
+            overflow: "auto",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: "20px 24px",
+              borderBottom: "1px solid #e0e0e0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "#f9f9f9"
+            }}>
+              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "600" }}>Receipt Details</h2>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#999"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "32px 24px" }}>
+              {/* Header with Receipt Number */}
+              <div style={{
+                padding: "16px",
+                backgroundColor: "#f0fdf4",
+                borderRadius: "8px",
+                border: "1px solid #dcfce7",
+                marginBottom: "24px"
+              }}>
+                <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "#666", fontWeight: "600", textTransform: "uppercase" }}>
+                  Receipt Number
+                </p>
+                <h3 style={{ margin: "0", fontSize: "18px", fontWeight: "700", color: "#059669" }}>
+                  {selectedReceipt.receiptNumber}
+                </h3>
+              </div>
+
+              {/* Receipt Details in Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+                {/* Amount */}
+                <div>
+                  <p style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                    Amount Paid
+                  </p>
+                  <p style={{ margin: 0, fontSize: "24px", fontWeight: "700", color: "#0066cc" }}>
+                    ₹{selectedReceipt.amount?.toLocaleString("en-IN")}
+                  </p>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <p style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                    Payment Method
+                  </p>
+                  <p style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#1f2937" }}>
+                    {selectedReceipt.paymentMethod || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: "24px" }}>
+                <p style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                  Description
+                </p>
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  color: "#1f2937"
+                }}>
+                  {(() => {
+                    let desc = selectedReceipt.description || "Payment";
+                    if (selectedReceipt.studentFee?.course) {
+                      desc = `${selectedReceipt.studentFee.course.title} - Installment ${selectedReceipt.installmentNumber}`;
+                    } else if (selectedReceipt.payment?.notes) {
+                      const match = selectedReceipt.payment.notes.match(/(?:Monthly|Quarterly|fee):\s*([^N]+?)(?:\s+Name:|Submitted|$)/i);
+                      if (match) {
+                        desc = match[1].trim();
+                      }
+                    }
+                    return desc;
+                  })()}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: "1px", backgroundColor: "#e5e7eb", margin: "24px 0" }} />
+
+              {/* Additional Details */}
+              <div style={{ display: "grid", gap: "16px", marginBottom: "24px" }}>
+                {/* Date */}
+                <div>
+                  <p style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                    Receipt Date
+                  </p>
+                  <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#1f2937" }}>
+                    {new Date(selectedReceipt.createdAt).toLocaleDateString("en-IN", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric"
+                    })}
+                  </p>
+                </div>
+
+                {/* Time */}
+                <div>
+                  <p style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                    Receipt Time
+                  </p>
+                  <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#1f2937" }}>
+                    {new Date(selectedReceipt.createdAt).toLocaleTimeString("en-IN")}
+                  </p>
+                </div>
+
+                {/* Reference ID */}
+                {selectedReceipt.referenceId && (
+                  <div>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                      Reference ID
+                    </p>
+                    <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#1f2937", wordBreak: "break-all" }}>
+                      {selectedReceipt.referenceId}
+                    </p>
+                  </div>
+                )}
+
+                {/* Status */}
+                <div>
+                  <p style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                    Status
+                  </p>
+                  <span style={{
+                    display: "inline-block",
+                    padding: "6px 12px",
+                    backgroundColor: "#dcfce7",
+                    color: "#166534",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "600"
+                  }}>
+                    ✓ {selectedReceipt.status || "Completed"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: "1px", backgroundColor: "#e5e7eb", margin: "24px 0" }} />
+
+              {/* Student Info */}
+              <div style={{ marginBottom: "24px" }}>
+                <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#999", fontWeight: "600", textTransform: "uppercase" }}>
+                  Billed To
+                </p>
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  color: "#1f2937"
+                }}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: "600" }}>{user?.name || "N/A"}</p>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "13px" }}>Email: {user?.email || "N/A"}</p>
+                  <p style={{ margin: "0", fontSize: "13px" }}>Phone: {user?.phone || "N/A"}</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={() => generateReceiptPDF(selectedReceipt)}
+                  style={{
+                    flex: 1,
+                    padding: "12px 20px",
+                    backgroundColor: "#0066cc",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    transition: "background-color 0.2s"
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = "#0052a3"}
+                  onMouseOut={(e) => e.target.style.backgroundColor = "#0066cc"}
+                >
+                  ⬇️ Download PDF
+                </button>
+                <button
+                  onClick={() => setSelectedReceipt(null)}
+                  style={{
+                    flex: 1,
+                    padding: "12px 20px",
+                    backgroundColor: "#e5e7eb",
+                    color: "#1f2937",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    transition: "background-color 0.2s"
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = "#d1d5db"}
+                  onMouseOut={(e) => e.target.style.backgroundColor = "#e5e7eb"}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

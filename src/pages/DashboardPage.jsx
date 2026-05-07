@@ -7,6 +7,56 @@ import NotificationList from "../components/NotificationList";
 import { useAuth } from "../context/AuthContext";
 import NotificationBanner from "../components/NotificationBanner";
 
+const COURSE_PROGRESS_SNAPSHOT_KEY = "sameer-course-progress-snapshots";
+
+const readCourseProgressSnapshots = () => {
+  try {
+    return JSON.parse(localStorage.getItem(COURSE_PROGRESS_SNAPSHOT_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const getStatusRank = (status = "Not Started") => {
+  if (status === "Completed") return 2;
+  if (status === "In Progress") return 1;
+  return 0;
+};
+
+const mergeEnrollmentsWithSnapshots = (enrollments = []) => {
+  const snapshots = readCourseProgressSnapshots();
+
+  return enrollments.map((enrollment) => {
+    const courseId = String(enrollment.course?._id || enrollment.course || "");
+    const snapshot = snapshots[courseId];
+
+    if (!snapshot) {
+      return enrollment;
+    }
+
+    const mergedStatus =
+      getStatusRank(snapshot.status) > getStatusRank(enrollment.status)
+        ? snapshot.status
+        : enrollment.status;
+
+    return {
+      ...enrollment,
+      progress: Math.max(snapshot.progress ?? 0, enrollment.progress ?? 0),
+      status: mergedStatus,
+      completedLessons:
+        (snapshot.totalLessons || 0) > 0
+          ? snapshot.completedLessons ?? enrollment.completedLessons
+          : enrollment.completedLessons,
+      totalLessons:
+        (snapshot.totalLessons || 0) > 0
+          ? snapshot.totalLessons
+          : enrollment.totalLessons,
+      completedSections: snapshot.completedSections ?? enrollment.completedSections,
+      totalSections: snapshot.totalSections ?? enrollment.totalSections,
+    };
+  });
+};
+
 const formatDate = (value) => {
   if (!value) return "-";
   return new Date(value).toLocaleString("en-IN", {
@@ -102,7 +152,10 @@ export default function DashboardPage() {
         throw new Error("Failed to load dashboard");
       }
       const json = await response.json();
-      setDashboard(json);
+      setDashboard({
+        ...json,
+        enrollments: mergeEnrollmentsWithSnapshots(json.enrollments || []),
+      });
     } catch (error) {
       setDashboard(null);
     }
@@ -292,7 +345,7 @@ export default function DashboardPage() {
           ) : (
             <>
               <div className="section-heading">
-                <span className="pill">{navItems.find((item) => item.id === selectedSection)?.label}</span>
+                
                 <h2>{{
                   notifications: "Notifications",
                   currentCourse: "Current course",
@@ -317,26 +370,37 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {selectedSection === "notifications" && (
-                <div className="card" style={{ padding: "24px" }}>
-                  <NotificationList token={token} userRole={user?.role} />
-                </div>
-              )}
+{selectedSection === "notifications" && (
+  <NotificationList token={token} userRole={user?.role} />
+)}
 
               {selectedSection === "currentCourse" && (
                 <div className="card-grid">
               {dashboard?.enrollments?.length ? (
                 dashboard.enrollments.map((enrollment) => (
-                  <article className="card" key={enrollment._id}>
-                    <div className="card-topline">
-                      <span>{enrollment.course?.category}</span>
-                      <span>{enrollment.status}</span>
+                  <article className="card course-card" key={enrollment._id}>
+                    <div className="card-header">
+                      <span className="course-badge">{enrollment.course?.category}</span>
+                      <span className="status-badge">{enrollment.status}</span>
                     </div>
-                    <h3>{enrollment.course?.title}</h3>
-                    <p>{enrollment.course?.summary}</p>
-                    <div className="card-meta">
-                      <span>Progress: {enrollment.progress}%</span>
-                      <span>{enrollment.completedLessons}/{enrollment.totalLessons} lessons</span>
+                    <h3 className="card-title">{enrollment.course?.title}</h3>
+                    <div className="card-body">
+                      <p>{enrollment.course?.summary}</p>
+                    </div>
+                    <div className="card-footer">
+                      <div className="card-footer-meta">
+                        <span>Progress: {enrollment.progress}%</span>
+                        <span>
+                          {enrollment.totalLessons > 0
+                            ? `${enrollment.completedLessons}/${enrollment.totalLessons} lessons`
+                            : enrollment.totalSections > 0
+                              ? `${enrollment.completedSections || 0}/${enrollment.totalSections} sections`
+                              : "No lessons yet"}
+                        </span>
+                      </div>
+                      <Link className="solid-button" to={`/courses/${enrollment.course?._id}/content`}>
+                        {enrollment.status === "Not Started" ? "Start Course" : "View Course"}
+                      </Link>
                     </div>
                   </article>
                 ))
