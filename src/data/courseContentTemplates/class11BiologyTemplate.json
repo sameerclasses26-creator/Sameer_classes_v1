@@ -1,0 +1,256 @@
+{
+  "sections": [
+    {
+      "title": "Cell Structure and Biomolecules",
+      "description": "Build a strong Class 11 Biology foundation with cell theory, cell organelles, and the major biomolecules of life.",
+      "order": 1,
+      "lessons": [
+        {
+          "title": "The Cell: Basic Unit of Life",
+          "description": "Understand cell theory, prokaryotic and eukaryotic cells, and the role of cell organelles.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "28 mins",
+          "order": 1
+        },
+        {
+          "title": "Cell Organelles and Their Functions",
+          "description": "Study nucleus, mitochondria, ribosomes, Golgi apparatus, endoplasmic reticulum, lysosomes, and plastids.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "32 mins",
+          "order": 2
+        },
+        {
+          "title": "Biomolecules Overview",
+          "description": "Learn the structure and importance of carbohydrates, proteins, lipids, and nucleic acids.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "30 mins",
+          "order": 3
+        }
+      ],
+      "topics": [
+        {
+          "title": "Cell Theory",
+          "description": "Principles of cell theory and why cells are considered the structural and functional unit of life.",
+          "order": 1
+        },
+        {
+          "title": "Membrane-bound Organelles",
+          "description": "Functions of organelles and how compartmentalization improves efficiency in eukaryotic cells.",
+          "order": 2
+        },
+        {
+          "title": "Macromolecules of Life",
+          "description": "Properties and biological roles of biomolecules in cellular structure and metabolism.",
+          "order": 3
+        }
+      ],
+      "examples": [
+        {
+          "title": "Comparing Prokaryotic and Eukaryotic Cells",
+          "description": "A quick comparison table that helps students identify major structural differences.",
+          "code": "Prokaryotic cell: no true nucleus, smaller ribosomes, no membrane-bound organelles.\nEukaryotic cell: true nucleus, membrane-bound organelles present, larger and more complex."
+        },
+        {
+          "title": "Why Mitochondria Are Called the Powerhouse",
+          "description": "Connect ATP production with the role of mitochondria in respiration.",
+          "code": "Mitochondria perform aerobic respiration and generate ATP, which powers most cellular activities."
+        }
+      ],
+      "questions": [
+        {
+          "question": "Which cell organelle is primarily responsible for ATP production?",
+          "options": [
+            "Golgi apparatus",
+            "Mitochondria",
+            "Lysosome",
+            "Nucleus"
+          ],
+          "correctAnswer": 1,
+          "difficulty": "easy"
+        },
+        {
+          "question": "Which biomolecule stores hereditary information?",
+          "options": [
+            "Protein",
+            "Lipid",
+            "Nucleic acid",
+            "Carbohydrate"
+          ],
+          "correctAnswer": 2,
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "title": "Plant Physiology: Transport and Photosynthesis",
+      "description": "Cover the core processes of water transport, mineral nutrition, and photosynthesis in Class 11 plant physiology.",
+      "order": 2,
+      "lessons": [
+        {
+          "title": "Transport in Plants",
+          "description": "Learn about diffusion, osmosis, imbibition, xylem transport, and translocation in phloem.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "35 mins",
+          "order": 1
+        },
+        {
+          "title": "Mineral Nutrition in Plants",
+          "description": "Understand essential nutrients, deficiency symptoms, and nutrient cycles in plants.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "24 mins",
+          "order": 2
+        },
+        {
+          "title": "Photosynthesis in Higher Plants",
+          "description": "Study pigments, light reactions, Calvin cycle, and factors affecting photosynthesis.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "38 mins",
+          "order": 3
+        }
+      ],
+      "topics": [
+        {
+          "title": "Osmosis and Water Potential",
+          "description": "Movement of water across membranes and its role in plant cells.",
+          "order": 1
+        },
+        {
+          "title": "Ascent of Sap",
+          "description": "Cohesion-tension theory and the role of transpiration pull.",
+          "order": 2
+        },
+        {
+          "title": "Photosynthetic Pigments and Light Reaction",
+          "description": "How chlorophyll and accessory pigments capture light to produce ATP and NADPH.",
+          "order": 3
+        }
+      ],
+      "examples": [
+        {
+          "title": "Transpiration Pull Example",
+          "description": "A simple explanation of how water travels from roots to leaves.",
+          "code": "When water evaporates from leaf surfaces, a pull is created in xylem vessels. Cohesion between water molecules keeps the water column intact."
+        },
+        {
+          "title": "Photosynthesis Equation",
+          "description": "Use the balanced equation to connect inputs and outputs of photosynthesis.",
+          "code": "6CO2 + 12H2O -> C6H12O6 + 6O2 + 6H2O"
+        }
+      ],
+      "questions": [
+        {
+          "question": "Which tissue is responsible for the transport of water in plants?",
+          "options": [
+            "Phloem",
+            "Xylem",
+            "Cortex",
+            "Epidermis"
+          ],
+          "correctAnswer": 1,
+          "difficulty": "easy"
+        },
+        {
+          "question": "The Calvin cycle takes place in which part of the chloroplast?",
+          "options": [
+            "Grana",
+            "Thylakoid membrane",
+            "Stroma",
+            "Outer membrane"
+          ],
+          "correctAnswer": 2,
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "title": "Human Physiology: Digestion, Respiration and Circulation",
+      "description": "Introduce the major Class 11 human physiology systems with digestive processes, breathing mechanics, and blood circulation.",
+      "order": 3,
+      "lessons": [
+        {
+          "title": "Digestion and Absorption",
+          "description": "Understand the human digestive tract, digestive glands, enzymes, and nutrient absorption.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "34 mins",
+          "order": 1
+        },
+        {
+          "title": "Breathing and Exchange of Gases",
+          "description": "Learn breathing mechanism, respiratory volumes, and transport of gases in blood.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "31 mins",
+          "order": 2
+        },
+        {
+          "title": "Body Fluids and Circulation",
+          "description": "Study blood composition, heart structure, cardiac cycle, and blood vessels.",
+          "videoUrl": "",
+          "resourceUrl": "",
+          "duration": "36 mins",
+          "order": 3
+        }
+      ],
+      "topics": [
+        {
+          "title": "Digestive Enzymes",
+          "description": "How enzymes like amylase, pepsin, trypsin, and lipase help break down food.",
+          "order": 1
+        },
+        {
+          "title": "Oxygen Dissociation and Gas Transport",
+          "description": "Role of hemoglobin and the transport of oxygen and carbon dioxide.",
+          "order": 2
+        },
+        {
+          "title": "Cardiac Cycle",
+          "description": "Sequence of events in one heartbeat including systole and diastole.",
+          "order": 3
+        }
+      ],
+      "examples": [
+        {
+          "title": "Path of Food Through the Alimentary Canal",
+          "description": "A flow-based example to help students visualize the digestive process.",
+          "code": "Mouth -> Buccal cavity -> Esophagus -> Stomach -> Small intestine -> Large intestine -> Rectum -> Anus"
+        },
+        {
+          "title": "Double Circulation",
+          "description": "Why humans have separate pulmonary and systemic circulation.",
+          "code": "Pulmonary circulation: heart -> lungs -> heart\nSystemic circulation: heart -> body -> heart"
+        }
+      ],
+      "questions": [
+        {
+          "question": "Which component of blood is primarily responsible for oxygen transport?",
+          "options": [
+            "Platelets",
+            "Plasma proteins",
+            "Hemoglobin in RBCs",
+            "Lymphocytes"
+          ],
+          "correctAnswer": 2,
+          "difficulty": "easy"
+        },
+        {
+          "question": "Which part of the digestive system is the main site of nutrient absorption?",
+          "options": [
+            "Stomach",
+            "Large intestine",
+            "Small intestine",
+            "Esophagus"
+          ],
+          "correctAnswer": 2,
+          "difficulty": "medium"
+        }
+      ]
+    }
+  ]
+}

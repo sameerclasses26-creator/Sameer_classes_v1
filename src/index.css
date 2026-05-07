@@ -528,11 +528,11 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 22px 20px;
+  padding: 22px 20px !important;
   border-radius: 32px;
-  background: linear-gradient(180deg, #172038 0%, #1f2845 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 30px 80px rgba(11, 24, 63, 0.18);
+  background: linear-gradient(180deg, #172038 0%, #1f2845 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 30px 80px rgba(11, 24, 63, 0.18) !important;
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -744,7 +744,7 @@ textarea {
 .card-grid,
 .gallery-grid {
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
 .stat-grid {
@@ -752,7 +752,7 @@ textarea {
 }
 
 .card-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .gallery-grid {
@@ -761,11 +761,64 @@ textarea {
 
 .stat-card,
 .card {
-  padding: 24px;
-  border-radius: 28px;
+  padding: 32px;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.course-card {
+  border-color: rgba(79, 172, 254, 0.15);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.course-badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.course-badge {
+  background: rgba(79, 172, 254, 0.15);
+  color: #1e5ba8;
+}
+
+.status-badge {
+  background: rgba(124, 58, 150, 0.12);
+  color: #5c3a76;
+}
+
+.card-title {
+  margin: 0 0 16px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #1a202c;
+  font-family: "Space Grotesk", sans-serif;
 }
 
 .stat-card h3,
@@ -788,35 +841,219 @@ textarea {
 }
 
 .card-body {
-  margin-top: 16px;
+  margin: 0 0 20px;
   flex: 1;
 }
 
 .card-body p {
   margin: 0;
-  line-height: 1.7;
-  color: var(--text-soft);
+  line-height: 1.65;
+  color: #4a5568;
+  font-size: 0.95rem;
 }
 
 .card-footer {
-  margin-top: 24px;
+  margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .card-footer-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   color: var(--muted);
   flex-wrap: wrap;
 }
 
 .card-footer-meta span {
   white-space: nowrap;
+}
+
+.mode-badge,
+.price-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.mode-badge {
+  background: rgba(79, 172, 254, 0.1);
+  color: #1e5ba8;
+}
+
+.price-badge {
+  background: rgba(34, 197, 94, 0.1);
+  color: #166534;
+  font-weight: 700;
+}
+
+/* Complete Class Card Styles */
+.complete-class-card {
+  padding: 32px;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid rgba(79, 172, 254, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 24px;
+}
+
+.complete-class-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+.complete-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.complete-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.complete-card-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 12px;
+  background: rgba(79, 172, 254, 0.15);
+  color: #1e5ba8;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.complete-card-title {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #1a202c;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.complete-card-summary {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #4a5568;
+}
+
+.complete-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.complete-card-mode,
+.complete-card-duration,
+.complete-card-price {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(79, 172, 254, 0.1);
+  color: #1e5ba8;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.complete-card-price {
+  background: rgba(34, 197, 94, 0.1);
+  color: #166534;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+/* Subjects Container */
+.subjects-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subjects-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a202c;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.subject-box {
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid rgba(79, 172, 254, 0.1);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 200ms ease;
+}
+
+.subject-box:hover {
+  border-color: rgba(79, 172, 254, 0.3);
+  background: rgba(79, 172, 254, 0.05);
+  transform: translateY(-2px);
+}
+
+.subject-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.subject-name {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.subject-description {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #718096;
+  line-height: 1.4;
+}
+
+.complete-card-action {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.complete-card-action .solid-button {
+  flex: 1;
+  padding: 12px 24px;
+  font-weight: 600;
+  border-radius: 12px;
 }
 
 .payment-page-grid {

@@ -5,13 +5,18 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminPage from "./pages/AdminPage";
 import AdminStudentDetailPage from "./pages/AdminStudentDetailPage";
 import AdminExamPage from "./pages/AdminExamPage";
+import AdminFeeManagementPage from "./pages/AdminFeeManagementPage";
+import AdminCourseContentPage from "./pages/AdminCourseContentPage";
+import CourseContentEditorPage from "./pages/CourseContentEditorPage";
 import StudentExamPage from "./pages/StudentExamPage";
 import ContactPage from "./pages/ContactPage";
 import Spinner from "./components/Spinner";
 import CoursePaymentPage from "./pages/CoursePaymentPage";
 import MaterialPaymentPage from "./pages/MaterialPaymentPage";
 import FeePaymentPage from "./pages/FeePaymentPage";
+import InstallmentPaymentPage from "./pages/InstallmentPaymentPage";
 import CoursesPage from "./pages/CoursesPage";
+import CourseContentPage from "./pages/CourseContentPage";
 import GalleryPage from "./pages/GalleryPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -58,6 +63,14 @@ export default function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/courses" element={<CoursesPage />} />
+        <Route
+          path="/courses/:courseId/content"
+          element={
+            <ProtectedRoute studentOnly>
+              <CourseContentPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/courses/:courseId/payment"
           element={
@@ -114,6 +127,30 @@ export default function App() {
           }
         />
         <Route
+          path="/admin/fees"
+          element={
+            <ProtectedRoute admin>
+              <AdminFeeManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/course-content"
+          element={
+            <ProtectedRoute admin>
+              <AdminCourseContentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses/:courseId/edit"
+          element={
+            <ProtectedRoute admin>
+              <CourseContentEditorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/exams/:examId"
           element={
             <ProtectedRoute studentOnly>
@@ -142,6 +179,14 @@ export default function App() {
           element={
             <ProtectedRoute studentOnly>
               <FeePaymentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/installments/payment"
+          element={
+            <ProtectedRoute studentOnly>
+              <InstallmentPaymentPage />
             </ProtectedRoute>
           }
         />

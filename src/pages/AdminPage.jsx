@@ -56,8 +56,10 @@ const navItems = [
  
   { key: "students", label: "Students" },
   { key: "courses", label: "Courses" },
+  { key: "course-content", label: "Course Content" },
   { key: "materials", label: "Study materials" },
   { key: "enrollments", label: "Enrollments" },
+  { key: "fees", label: "Fees & Installments" },
   { key: "notifications", label: "Notifications" },
   { key: "payments", label: "Payments" },
   { key: "doubts", label: "Doubt Sessions" },
@@ -420,6 +422,12 @@ export default function AdminPage() {
     if (sectionKey === "exams") {
       // Navigate within React Router instead of hard refresh
       navigate("/admin/exams");
+      return;
+    }
+
+    if (sectionKey === "fees") {
+      // Navigate to fee management page
+      navigate("/admin/fees");
       return;
     }
 
@@ -1166,6 +1174,23 @@ export default function AdminPage() {
                 )}
               </article>
             </>
+          ) : null}
+
+          {!loading && activeSection === "course-content" ? (
+            <article className="card admin-section-card">
+              <div className="section-heading">
+                <span className="pill">Course Content</span>
+                <h2>Manage course content</h2>
+                <p>Create sections and lessons for your courses</p>
+              </div>
+              <button 
+                className="solid-button" 
+                type="button" 
+                onClick={() => navigate("/admin/course-content")}
+              >
+                Open Course Content Manager →
+              </button>
+            </article>
           ) : null}
 
           {!loading && activeSection === "materials" ? (

@@ -1,23 +1,50 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("sameer-classes-user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [token, setToken] = useState(localStorage.getItem("sameer-classes-token"));
   const [loading, setLoading] = useState(true);
+  const hydrateAttempted = useRef(false);
+
+  // Persist user data to localStorage
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("sameer-classes-user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("sameer-classes-user");
+    }
+  }, [user]);
 
   useEffect(() => {
     const hydrate = async () => {
+      // Prevent multiple hydration attempts
+      if (hydrateAttempted.current) {
+        return;
+      }
+
       if (!token) {
+        setLoading(false);
+        hydrateAttempted.current = true;
+        return;
+      }
+
+      // Don't re-fetch if we already have user data
+      if (user) {
         setLoading(false);
         return;
       }
-      if (user) {
-    setLoading(false);
-    return;
-  }
+
+      hydrateAttempted.current = true;
 
       try {
         const response = await fetch(`${API_BASE}/auth/me`, {
@@ -32,11 +59,13 @@ export function AuthProvider({ children }) {
 
         const data = await response.json();
         setUser(data);
+        setLoading(false);
       } catch (error) {
+        // Only clear auth data if token is invalid
         localStorage.removeItem("sameer-classes-token");
+        localStorage.removeItem("sameer-classes-user");
         setToken(null);
         setUser(null);
-      } finally {
         setLoading(false);
       }
     };
@@ -98,6 +127,7 @@ const { token: newToken, ...userData } = data;
 
   const logout = () => {
     localStorage.removeItem("sameer-classes-token");
+    localStorage.removeItem("sameer-classes-user");
     setToken(null);
     setUser(null);
   };
